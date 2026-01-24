@@ -1,11 +1,40 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import documentRoutes from './routes/documentRoutes'
 
 const app = express()
 
-app.use(cors())
-app.use(express.json())
+/**
+ * Security headers
+ */
+app.use(helmet())
+
+
+/**
+ * CORS
+ * Adjust origin in production
+ */
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
+
+// Request logging
+app.use(require('./middleware/requestLogger'));
+
+/**
+ * Body parser
+ */
+app.use(express.json({ limit: '1mb' }))
+
+
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' })
+})
 
 app.use('/documents', documentRoutes)
 

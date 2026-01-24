@@ -61,7 +61,7 @@ Records signature events for documents.
 - `signatures.document_id` → `documents.id`.
 
 ## Notes
-- All tables use the `ar_nomina` schema.
+- All tables use the `ar_signature` and `ar_nomina` schema.
 - RLS is enabled; queries must respect user permissions.
 - The authenticated user ID is available via JWT (`auth.uid()` in Supabase).
 - No changes to the schema are allowed; integration must work with the existing structure.
