@@ -14,6 +14,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "secrets/getToken_felilond.ts"],
   "exclude": ["node_modules", "dist"]
 }
