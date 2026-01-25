@@ -1,12 +1,12 @@
 {
   "info": {
-    "name": "SignSystem API",
-    "description": null,
+    "name": "SignSystem API - Phase II",
+    "description": "Complete API collection for SignSystem Phase II with document listing, retrieval, and electronic signature functionality. Includes test cases for success and error scenarios.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Get Document by ID",
+      "name": "Get Document by ID - Valid Document",
       "request": {
         "method": "GET",
         "header": [
@@ -20,7 +20,7 @@
         "auth": {
           "type": "noauth"
         },
-        "description": "",
+        "description": "Retrieve a single document by ID. Validates ownership and returns document details without exposing internal file paths.",
         "url": {
           "raw": "{{base_url}}/documents/{{document_id}}",
           "protocol": "",
@@ -37,7 +37,7 @@
       }
     },
     {
-      "name": "Get Documents",
+      "name": "Get Document by ID - Not Found",
       "request": {
         "method": "GET",
         "header": [
@@ -51,7 +51,38 @@
         "auth": {
           "type": "noauth"
         },
-        "description": "",
+        "description": "Attempt to retrieve a non-existent document. Should return 404.",
+        "url": {
+          "raw": "{{base_url}}/documents/non-existent-id",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents",
+            "non-existent-id"
+          ],
+          "query": [],
+          "variable": []
+        }
+      }
+    },
+    {
+      "name": "Get Documents - List User Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Retrieve all documents belonging to the authenticated user, sorted by creation date DESC. Returns status and payroll_period.",
         "url": {
           "raw": "{{base_url}}/documents",
           "protocol": "",
@@ -90,7 +121,7 @@
       }
     },
     {
-      "name": "Sign Document",
+      "name": "Sign Document - Valid Request",
       "request": {
         "method": "POST",
         "header": [
@@ -110,7 +141,7 @@
         "auth": {
           "type": "noauth"
         },
-        "description": "",
+        "description": "Sign a document with valid credentials. Requires password re-authentication.",
         "url": {
           "raw": "{{base_url}}/documents/{{document_id}}/sign",
           "protocol": "",
@@ -127,7 +158,148 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{}",
+          "raw": "{\n  \"password\": \"testpassword123\",\n  \"fullName\": \"John Doe\",\n  \"identificationNumber\": \"123456789\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Sign Document - Invalid Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "disabled": false,
+            "type": "default"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Test authentication failure with wrong password. Should return 401.",
+        "url": {
+          "raw": "{{base_url}}/documents/{{document_id}}/sign",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents",
+            "{{document_id}}",
+            "sign"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"wrongpassword\",\n  \"fullName\": \"John Doe\",\n  \"identificationNumber\": \"123456789\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Sign Document - Already Signed",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "disabled": false,
+            "type": "default"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt to sign an already signed document. Should return 400.",
+        "url": {
+          "raw": "{{base_url}}/documents/{{signed_document_id}}/sign",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents",
+            "{{signed_document_id}}",
+            "sign"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"testpassword123\",\n  \"fullName\": \"John Doe\",\n  \"identificationNumber\": \"123456789\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Sign Document - Document Not Found",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "disabled": false,
+            "type": "default"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt to sign a non-existent document. Should return 404.",
+        "url": {
+          "raw": "{{base_url}}/documents/non-existent-id/sign",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents",
+            "non-existent-id",
+            "sign"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"testpassword123\",\n  \"fullName\": \"John Doe\",\n  \"identificationNumber\": \"123456789\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -208,6 +380,11 @@
     },
     {
       "key": "document_id",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "signed_document_id",
       "value": "",
       "type": "default"
     }
