@@ -1,0 +1,46 @@
+export interface Document {
+  id: string
+  user_id: string
+  employee_id: number
+  payroll_period: string
+  pdf_original_path: string
+  pdf_signed_path: string | null
+  status: 'PENDING' | 'SIGNED'
+  original_hash: string
+  signed_hash: string | null
+  created_at: string
+  signed_at: string | null
+}
+
+export interface Signature {
+  id: string
+  document_id: string
+  name: string
+  identification_number: string
+  ip: string
+  user_agent: string
+  hash_sign: string
+  signed_at: string
+}
+
+export interface SignDocumentRequest {
+  password: string
+  fullName: string
+  identificationNumber: string
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  error?: string
+}
+
+export interface SignatureData {
+  document_id: string
+  name: string
+  identification_number: string
+  ip: string
+  user_agent: string
+  hash_sign: string
+  signed_at: string
+}
