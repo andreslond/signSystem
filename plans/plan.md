@@ -114,7 +114,7 @@ As outlined in the PLANNING section. Create directories and files as needed.
 
 ### 7. DocumentRepository
 - `repositories/DocumentRepository.ts`: Class with methods:
-  - `findAll(userId)`: Query `ar_nomina.documents` with RLS.
+  - `findAll(userId)`: Query `ar_signatures.documents` with RLS.
   - `findById(userId, id)`: Query specific document.
   - `updateSignature(userId, id, signatureData)`: TODO for Phase 2.
 
