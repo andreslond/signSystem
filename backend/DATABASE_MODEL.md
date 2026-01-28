@@ -32,8 +32,8 @@ Stores payroll documents for signing.
 - **id** (uuid, Primary Key): Unique identifier for the document.
 - **user_id** (uuid, Foreign Key to profiles.id): The user who owns the document.
 - **employee_id** (bigint, Foreign Key to employees.id): The employee associated with the document.
-- **payroll_period_start** (text): Period of the payroll (e.g., '20-11-2025').
-- **payroll_period_end** (text): Period of the payroll (e.g., '27-11-2025').
+- **payroll_period_start** (date): Start date of the payroll period (DD-MM-YYYY format).
+- **payroll_period_end** (date): End date of the payroll period (DD-MM-YYYY format).
 - **pdf_original_path** (text): Path to the original PDF file.
 - **pdf_signed_path** (text): Path to the signed PDF file (null if not signed).
 - **status** (text): Status of the document ('PENDING', 'SIGNED', or 'INVALIDATED').
@@ -64,19 +64,38 @@ Records signature events for documents.
 - `signatures.document_id` → `documents.id`.
 
 ## Schema Updates
-The following changes have been applied to support document lifecycle management:
+The following changes have been applied to support document lifecycle management and date range payroll periods:
 
 ```sql
+-- Add lifecycle management columns
 ALTER TABLE ar_signatures.documents
 ADD COLUMN superseded_by uuid,
 ADD COLUMN is_active boolean NOT NULL DEFAULT true;
+
+-- Migrate from single payroll_period to date range
+ALTER TABLE ar_signatures.documents DROP COLUMN payroll_period;
+ALTER TABLE ar_signatures.documents
+ADD COLUMN payroll_period_start date NOT NULL,
+ADD COLUMN payroll_period_end date NOT NULL;
+
+-- Add constraints
+ALTER TABLE ar_signatures.documents
+ADD CONSTRAINT valid_date_range CHECK (payroll_period_start <= payroll_period_end),
+ADD CONSTRAINT unique_active_document_per_period EXCLUDE (
+    user_id WITH =,
+    payroll_period_start WITH =,
+    payroll_period_end WITH =,
+    original_hash WITH =
+) WHERE (is_active = true);
 ```
 
 Status values: 'PENDING' (can be replaced), 'SIGNED' (invalidate only), 'INVALIDATED' (read-only).
 
+**Migration Note**: Existing `payroll_period` values (format: "YYYY-MM") should be converted to date ranges where start_date = first day of month and end_date = last day of month.
+
 ## Suggested indexes
-CREATE INDEX idx_documents_active_period
-ON ar_signatures.documents(user_id, payroll_period)
+CREATE INDEX idx_documents_active_period_range
+ON ar_signatures.documents(user_id, payroll_period_start, payroll_period_end)
 WHERE is_active = true;
 
 
