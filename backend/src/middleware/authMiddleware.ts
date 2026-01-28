@@ -11,11 +11,12 @@ declare global {
 }
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  console.info(`[authMiddleware] Token - ${token}`)
-  if (!token) {
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' })
   }
+  const token = authHeader.replace('Bearer ', '')
+  console.info(`[authMiddleware] Token - ${token}`)  
   try {
     const { data, error } = await createSupabaseUserClient(token).auth.getUser(token)
     if (error || !data.user) {

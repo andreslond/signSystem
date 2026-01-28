@@ -29,4 +29,10 @@ export class GCSUtil {
       },
     })
   }
+
+  static async deletePdf(filePath: string): Promise<void> {
+    this.init()
+    const file = this.storage.bucket(this.bucketName).file(filePath)
+    await file.delete()
+  }
 }

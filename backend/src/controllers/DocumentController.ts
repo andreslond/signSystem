@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentService } from '../services/DocumentService'
-import { SignDocumentRequest } from '../types'
+import { SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse } from '../types'
 
 declare global {
   namespace Express {
@@ -59,6 +59,47 @@ export class DocumentController {
       const statusCode = error.message.includes('not found') ? 404 :
                         error.message.includes('already signed') ? 400 :
                         error.message.includes('Authentication failed') ? 401 : 500
+      res.status(statusCode).json({ error: error.message })
+    }
+  }
+
+  uploadDocument = async (req: Request, res: Response) => {
+    try {
+      // Validate required fields
+      const { user_id, employee_id, payroll_period } = req.body
+      const pdfFile = (req as any).file
+
+      if (!pdfFile || !pdfFile.buffer) {
+        return res.status(400).json({ error: 'PDF file is required' })
+      }
+      if (!user_id || !employee_id || !payroll_period) {
+        return res.status(400).json({ error: 'user_id, employee_id, and payroll_period are required' })
+      }
+
+      // Validate payroll_period format
+      if (!/^\d{2}-\d{2}-\d{4}$/.test(payroll_period)) {
+        return res.status(400).json({ error: 'payroll_period must be in DD-MM-YYYY format' })
+      }
+
+      const uploadRequest: UploadDocumentRequest = {
+        pdf: pdfFile.buffer,
+        user_id,
+        employee_id: parseInt(employee_id, 10),
+        payroll_period
+      }
+
+      console.log(`[DocumentController] uploadDocument: Processing upload for user ${user_id}, period ${payroll_period}`)
+
+      const response: UploadDocumentResponse = await DocumentService.uploadDocument(uploadRequest)
+
+      console.log(`[DocumentController] uploadDocument: Successfully uploaded document ${response.document_id}`)
+      res.status(201).json(response)
+
+    } catch (error: any) {
+      console.error(`[DocumentController] uploadDocument: Error - ${error.message}`)
+      const statusCode = error.message.includes('not found') ? 404 :
+                         error.message.includes('does not match') ? 400 :
+                         error.message.includes('already exists') ? 409 : 500
       res.status(statusCode).json({ error: error.message })
     }
   }
