@@ -66,29 +66,31 @@ export class DocumentController {
   uploadDocument = async (req: Request, res: Response) => {
     try {
       // Validate required fields
-      const { user_id, employee_id, payroll_period } = req.body
+      const { user_id, employee_id, payroll_period_start, payroll_period_end } = req.body
       const pdfFile = (req as any).file
 
       if (!pdfFile || !pdfFile.buffer) {
         return res.status(400).json({ error: 'PDF file is required' })
       }
-      if (!user_id || !employee_id || !payroll_period) {
-        return res.status(400).json({ error: 'user_id, employee_id, and payroll_period are required' })
+      if (!user_id || !employee_id || !payroll_period_start || !payroll_period_end) {
+        return res.status(400).json({ error: 'user_id, employee_id, payroll_period_start, and payroll_period_end are required' })
       }
 
-      // Validate payroll_period format
-      if (!/^\d{2}-\d{2}-\d{4}$/.test(payroll_period)) {
-        return res.status(400).json({ error: 'payroll_period must be in DD-MM-YYYY format' })
+      // Validate date format (DD-MM-YYYY)
+      const dateRegex = /^\d{2}-\d{2}-\d{4}$/
+      if (!dateRegex.test(payroll_period_start) || !dateRegex.test(payroll_period_end)) {
+        return res.status(400).json({ error: 'payroll_period_start and payroll_period_end must be in DD-MM-YYYY format' })
       }
 
       const uploadRequest: UploadDocumentRequest = {
         pdf: pdfFile.buffer,
         user_id,
         employee_id: parseInt(employee_id, 10),
-        payroll_period
+        payroll_period_start,
+        payroll_period_end
       }
 
-      console.log(`[DocumentController] uploadDocument: Processing upload for user ${user_id}, period ${payroll_period}`)
+      console.log(`[DocumentController] uploadDocument: Processing upload for user ${user_id}, period ${payroll_period_start} to ${payroll_period_end}`)
 
       const response: UploadDocumentResponse = await DocumentService.uploadDocument(uploadRequest)
 
@@ -98,8 +100,9 @@ export class DocumentController {
     } catch (error: any) {
       console.error(`[DocumentController] uploadDocument: Error - ${error.message}`)
       const statusCode = error.message.includes('not found') ? 404 :
-                         error.message.includes('does not match') ? 400 :
-                         error.message.includes('already exists') ? 409 : 500
+                          error.message.includes('does not match') ? 400 :
+                          error.message.includes('must be before') ? 400 :
+                          error.message.includes('already exists') ? 409 : 500
       res.status(statusCode).json({ error: error.message })
     }
   }

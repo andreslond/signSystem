@@ -21,13 +21,14 @@ export class DocumentAdminRepository {
     return data
   }
 
-  async checkIdempotency(userId: string, payrollPeriod: string, originalHash: string): Promise<Document | null> {
+  async checkIdempotency(userId: string, payrollPeriodStart: string, payrollPeriodEnd: string, originalHash: string): Promise<Document | null> {
     const { data, error } = await this.supabaseClient
       .schema('ar_signatures')
       .from('documents')
       .select('*')
       .eq('user_id', userId)
-      .eq('payroll_period', payrollPeriod)
+      .eq('payroll_period_start', payrollPeriodStart)
+      .eq('payroll_period_end', payrollPeriodEnd)
       .eq('original_hash', originalHash)
       .single()
 

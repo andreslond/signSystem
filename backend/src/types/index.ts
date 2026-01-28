@@ -2,7 +2,8 @@ export interface Document {
   id: string
   user_id: string
   employee_id: number
-  payroll_period: string
+  payroll_period_start: string
+  payroll_period_end: string
   pdf_original_path: string
   pdf_signed_path: string | null
   status: 'PENDING' | 'SIGNED' | 'INVALIDATED'
@@ -51,12 +52,14 @@ export interface UploadDocumentRequest {
   pdf: Buffer
   user_id: string
   employee_id: number
-  payroll_period: string
+  payroll_period_start: string
+  payroll_period_end: string
 }
 
 export interface UploadDocumentResponse {
   document_id: string
   status: 'PENDING'
-  payroll_period: string
+  payroll_period_start: string
+  payroll_period_end: string
   idempotent?: boolean
 }

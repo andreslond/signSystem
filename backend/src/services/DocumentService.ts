@@ -104,7 +104,7 @@ export class DocumentService {
     let uploadedPath: string | null = null
 
     try {
-      console.log(`[DocumentService] uploadDocument: Starting upload for user ${request.user_id}, period ${request.payroll_period}`)
+      console.log(`[DocumentService] uploadDocument: Starting upload for user ${request.user_id}, period ${request.payroll_period_start} to ${request.payroll_period_end}`)
 
       // 1. Validate user exists
       const profile = await adminRepo.checkUserExists(request.user_id)
@@ -119,37 +119,52 @@ export class DocumentService {
       }
       console.log(`[DocumentService] uploadDocument: Employee ID matches`)
 
-      // 3. Compute SHA-256 hash
+      // 3. Validate date range
+      const [startDay, startMonth, startYear] = request.payroll_period_start.split('-').map(Number)
+      const [endDay, endMonth, endYear] = request.payroll_period_end.split('-').map(Number)
+
+      // Simple date range validation (year-month-day comparison)
+      const startValue = startYear * 10000 + startMonth * 100 + startDay
+      const endValue = endYear * 10000 + endMonth * 100 + endDay
+
+      if (startValue >= endValue) {
+        throw new Error('Payroll period start date must be before end date')
+      }
+      console.log(`[DocumentService] uploadDocument: Date range validated`)
+
+      // 4. Compute SHA-256 hash
       const originalHash = HashUtil.sha256(request.pdf)
       console.log(`[DocumentService] uploadDocument: Computed hash ${originalHash}`)
 
-      // 4. Check idempotency
-      const existingDoc = await adminRepo.checkIdempotency(request.user_id, request.payroll_period, originalHash)
+      // 5. Check idempotency
+      const existingDoc = await adminRepo.checkIdempotency(request.user_id, request.payroll_period_start, request.payroll_period_end, originalHash)
       if (existingDoc) {
         console.log(`[DocumentService] uploadDocument: Idempotent hit, returning existing document ${existingDoc.id}`)
         return {
           document_id: existingDoc.id,
           status: existingDoc.status as 'PENDING',
-          payroll_period: existingDoc.payroll_period,
+          payroll_period_start: existingDoc.payroll_period_start,
+          payroll_period_end: existingDoc.payroll_period_end,
           idempotent: true
         }
       }
 
-      // 5. Generate document ID
+      // 6. Generate document ID
       const documentId = uuidv4()
       console.log(`[DocumentService] uploadDocument: Generated document ID ${documentId}`)
 
-      // 6. Upload to GCS
+      // 7. Upload to GCS
       uploadedPath = `original/${request.user_id}/${documentId}.pdf`
       await GCSUtil.uploadPdf(uploadedPath, request.pdf)
       console.log(`[DocumentService] uploadDocument: Uploaded to GCS at ${uploadedPath}`)
 
-      // 7. Insert document record
+      // 8. Insert document record
       const documentData = {
         id: documentId,
         user_id: request.user_id,
         employee_id: request.employee_id,
-        payroll_period: request.payroll_period,
+        payroll_period_start: request.payroll_period_start,
+        payroll_period_end: request.payroll_period_end,
         pdf_original_path: uploadedPath,
         status: 'PENDING' as const,
         original_hash: originalHash,
@@ -163,7 +178,8 @@ export class DocumentService {
       return {
         document_id: insertedDoc.id,
         status: insertedDoc.status as 'PENDING',
-        payroll_period: insertedDoc.payroll_period
+        payroll_period_start: insertedDoc.payroll_period_start,
+        payroll_period_end: insertedDoc.payroll_period_end
       }
 
     } catch (error) {
