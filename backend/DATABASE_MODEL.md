@@ -5,7 +5,7 @@ This document describes the existing database schema for the SignSystem project,
 ## Tables
 
 ### employees
-Stores employee information.
+Stores employee information in the schema ar_nomina
 
 - **id** (bigint, Primary Key): Unique identifier for the employee.
 - **name** (text): Full name of the employee.
