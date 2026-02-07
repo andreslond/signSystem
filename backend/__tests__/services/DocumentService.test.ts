@@ -4,7 +4,7 @@ import { DocumentAdminRepository } from '../../src/repositories/DocumentAdminRep
 import { GCSUtil } from '../../src/utils/gcs'
 import { PDFUtil } from '../../src/utils/pdf'
 import { HashUtil } from '../../src/utils/hash'
-import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse } from '../../src/types'
+import { Document, UploadDocumentRequest } from '../../src/types'
 
 // Mock dependencies
 jest.mock('../../src/repositories/DocumentRepository')
