@@ -1,18 +1,28 @@
+import { PostgrestError } from '@supabase/supabase-js'
 import { DocumentAdminRepository } from '../../src/repositories/DocumentAdminRepository'
-import { Document } from '../../src/types'
+import { Document, MockQueryBuilder } from '../../src/types'
 
 // Mock Supabase
 jest.mock('../../src/config/supabase', () => ({
   createSupabaseAdminClient: jest.fn(),
 }))
 
-const mockSupabaseClient: any = {
-  schema: jest.fn(() => mockSupabaseClient),
-  from: jest.fn(() => mockSupabaseClient),
-  select: jest.fn(() => mockSupabaseClient),
-  eq: jest.fn(() => mockSupabaseClient),
-  single: jest.fn(),
-  insert: jest.fn(() => mockSupabaseClient),
+const createMockQueryBuilder = <T = any>() => {
+  const builder: MockQueryBuilder<T> = {
+    insert: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn(),
+  }
+
+  return builder
+}
+
+const mockQueryBuilder = createMockQueryBuilder()
+
+const mockSupabaseClient = {
+  schema: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnValue(mockQueryBuilder),
 }
 
 const { createSupabaseAdminClient } = require('../../src/config/supabase')
@@ -29,21 +39,23 @@ describe('DocumentAdminRepository', () => {
   describe('checkUserExists', () => {
     it('should return user profile when user exists', async () => {
       const mockProfile = { employee_id: 123 }
-      mockSupabaseClient.single.mockResolvedValue({ data: mockProfile, error: null })
+      mockQueryBuilder.single.mockResolvedValue({ data: mockProfile, error: null })
 
       const result = await repository.checkUserExists('user-123')
 
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('profiles')
-      expect(mockSupabaseClient.select).toHaveBeenCalledWith('employee_id')
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('id', 'user-123')
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('employee_id')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'user-123')
       expect(result).toEqual(mockProfile)
     })
 
     it('should return null when user does not exist', async () => {
-      mockSupabaseClient.single.mockResolvedValue({
+      mockQueryBuilder.single.mockResolvedValue({
         data: null,
-        error: { code: 'PGRST116' }
+        error: new PostgrestError(
+          { message: 'More than 1 or no items where returned when requesting a singular response', 
+            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116', })
       })
 
       const result = await repository.checkUserExists('non-existent-user')
@@ -53,7 +65,7 @@ describe('DocumentAdminRepository', () => {
 
     it('should throw error on database error', async () => {
       const error = new Error('Database error')
-      mockSupabaseClient.single.mockRejectedValue(error)
+      mockQueryBuilder.single.mockRejectedValue(error)
 
       await expect(repository.checkUserExists('user-123')).rejects.toThrow('Database error')
     })
@@ -65,7 +77,8 @@ describe('DocumentAdminRepository', () => {
         id: 'doc-123',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/doc-123.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -76,35 +89,38 @@ describe('DocumentAdminRepository', () => {
         superseded_by: null,
         is_active: true,
       }
-      mockSupabaseClient.single.mockResolvedValue({ data: mockDocument, error: null })
+      mockQueryBuilder.single.mockResolvedValue({ data: mockDocument, error: null })
 
-      const result = await repository.checkIdempotency('user-123', '2025-01', 'hash123')
+      const result = await repository.checkIdempotency('user-123', '01-01-2025', '31-01-2025', 'hash123')
 
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('documents')
-      expect(mockSupabaseClient.select).toHaveBeenCalledWith('*')
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('user_id', 'user-123')
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('payroll_period', '2025-01')
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('original_hash', 'hash123')
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('*')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_start', '01-01-2025')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_end', '31-01-2025')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('original_hash', 'hash123')
       expect(result).toEqual(mockDocument)
     })
 
     it('should return null when no document found', async () => {
-      mockSupabaseClient.single.mockResolvedValue({
+      mockQueryBuilder.single.mockResolvedValue({
         data: null,
-        error: { code: 'PGRST116' }
+        error: new PostgrestError(
+          { message: 'More than 1 or no items where returned when requesting a singular response', 
+            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116', })
       })
 
-      const result = await repository.checkIdempotency('user-123', '2025-01', 'hash123')
+      const result = await repository.checkIdempotency('user-123', '01-01-2025', '31-01-2025', 'hash123')
 
       expect(result).toBeNull()
     })
 
     it('should throw error on database error', async () => {
       const error = new Error('Database error')
-      mockSupabaseClient.single.mockRejectedValue(error)
+      mockQueryBuilder.single.mockRejectedValue(error)
 
-      await expect(repository.checkIdempotency('user-123', '2025-01', 'hash123')).rejects.toThrow('Database error')
+      await expect(repository.checkIdempotency('user-123', '01-01-2025', '31-01-2025', 'hash123')).rejects.toThrow('Database error')
     })
   })
 
@@ -114,7 +130,8 @@ describe('DocumentAdminRepository', () => {
         id: 'doc-123',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/doc-123.pdf',
         status: 'PENDING' as const,
         original_hash: 'hash123',
@@ -129,14 +146,13 @@ describe('DocumentAdminRepository', () => {
         signed_at: null,
         created_at: '2025-01-01T00:00:00Z',
       }
-
-      mockSupabaseClient.single.mockResolvedValue({ data: mockInsertedDocument, error: null })
+      mockQueryBuilder.single.mockResolvedValue({ data: mockInsertedDocument, error: null }) 
 
       const result = await repository.insertDocument(documentData)
 
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('documents')
-      expect(mockSupabaseClient.insert).toHaveBeenCalledWith(documentData)
+      expect(mockQueryBuilder.insert).toHaveBeenCalledWith(documentData)
       expect(result).toEqual(mockInsertedDocument)
     })
 
@@ -145,7 +161,8 @@ describe('DocumentAdminRepository', () => {
         id: 'doc-123',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/doc-123.pdf',
         status: 'PENDING' as const,
         original_hash: 'hash123',
@@ -154,7 +171,7 @@ describe('DocumentAdminRepository', () => {
       }
 
       const error = new Error('Insert failed')
-      mockSupabaseClient.single.mockRejectedValue(error)
+      mockQueryBuilder.single.mockRejectedValue(error)
 
       await expect(repository.insertDocument(documentData)).rejects.toThrow('Insert failed')
     })

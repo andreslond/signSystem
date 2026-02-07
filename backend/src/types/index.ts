@@ -63,3 +63,30 @@ export interface UploadDocumentResponse {
   payroll_period_end: string
   idempotent?: boolean
 }
+
+export type SupabaseResult<T = any> = {
+  data: T | null
+  error: Error | null
+}
+
+export type SupabaseQueryBuilderMock<T = any> = {
+  eq: jest.Mock<Promise<SupabaseResult<T>>, [string, any]>
+  single?: jest.Mock<Promise<SupabaseResult<T>>, []>
+}
+
+export type SupabaseClientMock = {
+  schema: jest.Mock<SupabaseClientMock, [string]>
+  from: jest.Mock<SupabaseClientMock, [string]>
+  select: jest.Mock<SupabaseClientMock, [string?]>
+  order: jest.Mock<SupabaseClientMock, [string, { ascending?: boolean }?]>
+  insert: jest.Mock<SupabaseQueryBuilderMock, [any]>
+  update: jest.Mock<SupabaseQueryBuilderMock, [any]>
+  eq: jest.Mock<SupabaseClientMock, [string, any]>
+}
+
+export type MockQueryBuilder<T = any> = {
+  select: jest.MockedFunction<any>
+  eq: jest.MockedFunction<any>
+  single: jest.MockedFunction<() => Promise<SupabaseResult<T>>>
+  insert: jest.MockedFunction<() => Promise<SupabaseResult<T>>>
+}

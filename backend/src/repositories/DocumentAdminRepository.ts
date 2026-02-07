@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '../config/supabase'
-import { Document, UploadDocumentRequest } from '../types'
+import { Document } from '../types'
 
 export class DocumentAdminRepository {
   private get supabaseClient() {

@@ -14,25 +14,37 @@ export class GCSUtil {
   }
 
   static async downloadPdf(filePath: string): Promise<Buffer> {
-    this.init()
-    const file = this.storage.bucket(this.bucketName).file(filePath)
-    const [buffer] = await file.download()
-    return buffer
+    try {
+      this.init()
+      const file = this.storage.bucket(this.bucketName).file(filePath)
+      const [buffer] = await file.download()
+      return buffer
+    } catch (error) {
+      throw new Error(`Failed to download PDF from GCS: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   static async uploadPdf(filePath: string, buffer: Buffer): Promise<void> {
-    this.init()
-    const file = this.storage.bucket(this.bucketName).file(filePath)
-    await file.save(buffer, {
-      metadata: {
-        contentType: 'application/pdf',
-      },
-    })
+    try {
+      this.init()
+      const file = this.storage.bucket(this.bucketName).file(filePath)
+      await file.save(buffer, {
+        metadata: {
+          contentType: 'application/pdf',
+        },
+      })
+    } catch (error) {
+      throw new Error(`Failed to upload PDF to GCS: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   static async deletePdf(filePath: string): Promise<void> {
-    this.init()
-    const file = this.storage.bucket(this.bucketName).file(filePath)
-    await file.delete()
+    try {
+      this.init()
+      const file = this.storage.bucket(this.bucketName).file(filePath)
+      await file.delete()
+    } catch (error) {
+      throw new Error(`Failed to delete PDF from GCS: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 }

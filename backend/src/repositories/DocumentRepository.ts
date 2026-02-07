@@ -1,5 +1,6 @@
 import { createSupabaseUserClient } from '../config/supabase'
 import { Document, SignatureData } from '../types'
+import Logger from '../utils/logger'
 
 
 export class DocumentRepository {
@@ -17,7 +18,10 @@ export class DocumentRepository {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      Logger.error('Failed to get documents by user', { error: error.message, code: error.code, userId })
+      throw error
+    }
     return data || []
   }
 
@@ -31,7 +35,8 @@ export class DocumentRepository {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') return null // No rows returned
+      if (error.code === 'PGRST116') return null
+      Logger.error('Failed to get document by ID', { error: error.message, code: error.code, documentId, userId })
       throw error
     }
     return data
@@ -43,7 +48,10 @@ export class DocumentRepository {
       .from('signatures')
       .insert(signatureData)
 
-    if (error) throw error
+    if (error) {
+      Logger.error('Failed to insert signature', { error: error.message, code: error.code, signatureData })
+      throw error
+    }
   }
 
   async updateDocumentAsSigned(documentId: string, signedHash: string, signedAt: string): Promise<void> {
@@ -57,6 +65,9 @@ export class DocumentRepository {
       })
       .eq('id', documentId)
 
-    if (error) throw error
+    if (error) {
+      Logger.error('Failed to update document as signed', { error: error.message, code: error.code, documentId })
+      throw error
+    }
   }
 }

@@ -1,20 +1,45 @@
 import { DocumentRepository } from '../../src/repositories/DocumentRepository'
-import { Document, SignatureData } from '../../src/types'
+import { Document, SignatureData, SupabaseQueryBuilderMock, SupabaseClientMock, SupabaseResult } from '../../src/types'
 
 // Mock Supabase
 jest.mock('../../src/config/supabase', () => ({
   createSupabaseUserClient: jest.fn(),
 }))
 
-const mockSupabaseClient: any = {
-  schema: jest.fn(() => mockSupabaseClient),
-  from: jest.fn(() => mockSupabaseClient),
-  select: jest.fn(() => mockSupabaseClient),
-  eq: jest.fn(() => mockSupabaseClient),
-  order: jest.fn(() => mockSupabaseClient),
-  single: jest.fn(),
-  insert: jest.fn(() => mockSupabaseClient),
-  update: jest.fn(() => mockSupabaseClient),
+const getDocumentsBuilder = {
+  order: jest.fn<Promise<SupabaseResult<Document[]>>, [string, any]>(),
+}
+
+const getDocumentByIdBuilder = {
+  single: jest.fn<Promise<SupabaseResult<Document>>, []>(),
+}
+
+const insertBuilder = jest.fn<Promise<{ error: any | null }>, [SignatureData]>()
+
+const updateBuilder = {
+  eq: jest.fn<Promise<{ error: any | null }>, [string, string]>(),
+}
+
+const mockSupabaseClient = {
+  schema: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+
+  order: jest.fn().mockImplementation(
+  (column: string, options?: { ascending?: boolean }) =>
+    getDocumentsBuilder.order(column, options)
+  ),
+
+  single: jest.fn().mockImplementation(
+    () => getDocumentByIdBuilder.single()
+  ),
+
+  insert: jest.fn().mockImplementation(
+    (data) => insertBuilder(data)
+  ),
+
+  update: jest.fn().mockReturnValue(updateBuilder),
 }
 
 const { createSupabaseUserClient } = require('../../src/config/supabase')
@@ -35,7 +60,8 @@ describe('DocumentRepository', () => {
           id: 'doc-1',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
           pdf_original_path: 'original/user-123/doc-1.pdf',
           pdf_signed_path: null,
           status: 'PENDING',
@@ -47,9 +73,8 @@ describe('DocumentRepository', () => {
           is_active: true,
         },
       ]
-      mockSupabaseClient.select.mockReturnValue(mockSupabaseClient)
       mockSupabaseClient.order.mockResolvedValue({ data: mockDocuments, error: null })
-
+      
       const result = await repository.getDocumentsByUser('user-123')
 
       expect(createSupabaseUserClient).toHaveBeenCalledWith('test-token')
@@ -62,8 +87,7 @@ describe('DocumentRepository', () => {
     })
 
     it('should return empty array when no documents found', async () => {
-      mockSupabaseClient.select.mockReturnValue(mockSupabaseClient)
-      mockSupabaseClient.order.mockResolvedValue({ data: null, error: null })
+      mockSupabaseClient.order.mockResolvedValue({ data: [], error: null })
 
       const result = await repository.getDocumentsByUser('user-123')
 
@@ -72,8 +96,7 @@ describe('DocumentRepository', () => {
 
     it('should throw error on database error', async () => {
       const error = new Error('Database error')
-      mockSupabaseClient.select.mockReturnValue(mockSupabaseClient)
-      mockSupabaseClient.order.mockRejectedValue(error)
+       mockSupabaseClient.order.mockResolvedValue({ data: null, error })
 
       await expect(repository.getDocumentsByUser('user-123')).rejects.toThrow('Database error')
     })
@@ -85,7 +108,8 @@ describe('DocumentRepository', () => {
         id: 'doc-123',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/doc-123.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -160,7 +184,7 @@ describe('DocumentRepository', () => {
       }
 
       const error = new Error('Insert failed')
-      mockSupabaseClient.insert.mockRejectedValue(error)
+      mockSupabaseClient.insert.mockResolvedValue({ error })
 
       await expect(repository.insertSignature(signatureData)).rejects.toThrow('Insert failed')
     })
@@ -168,7 +192,8 @@ describe('DocumentRepository', () => {
 
   describe('updateDocumentAsSigned', () => {
     it('should update document as signed', async () => {
-      mockSupabaseClient.update.mockResolvedValue({ error: null })
+      updateBuilder.eq.mockResolvedValue({ error: null })
+      mockSupabaseClient.update.mockReturnValue(updateBuilder)
 
       await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).resolves.toBeUndefined()
 
@@ -179,12 +204,13 @@ describe('DocumentRepository', () => {
         signed_hash: 'signed_hash',
         signed_at: '2025-01-01T00:00:00Z',
       })
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('id', 'doc-123')
+      expect(updateBuilder.eq).toHaveBeenCalledWith('id', 'doc-123')
     })
 
     it('should throw error on update failure', async () => {
       const error = new Error('Update failed')
-      mockSupabaseClient.update.mockRejectedValue(error)
+      updateBuilder.eq.mockResolvedValue({ error })
+      mockSupabaseClient.update.mockReturnValue(updateBuilder)
 
       await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).rejects.toThrow('Update failed')
     })

@@ -61,7 +61,7 @@ describe('GCSUtil', () => {
       const error = new Error('Download failed')
       mockFile.download.mockRejectedValue(error)
 
-      await expect(GCSUtil.downloadPdf('test/path.pdf')).rejects.toThrow('Download failed')
+      await expect(GCSUtil.downloadPdf('test/path.pdf')).rejects.toThrow('Failed to download PDF from GCS: Download failed')
     })
   })
 
@@ -86,7 +86,7 @@ describe('GCSUtil', () => {
       mockFile.save.mockRejectedValue(error)
 
       const testBuffer = Buffer.from('test pdf content')
-      await expect(GCSUtil.uploadPdf('test/path.pdf', testBuffer)).rejects.toThrow('Upload failed')
+      await expect(GCSUtil.uploadPdf('test/path.pdf', testBuffer)).rejects.toThrow('Failed to upload PDF to GCS: Upload failed')
     })
   })
 
@@ -105,14 +105,15 @@ describe('GCSUtil', () => {
       const error = new Error('Delete failed')
       mockFile.delete.mockRejectedValue(error)
 
-      await expect(GCSUtil.deletePdf('test/path.pdf')).rejects.toThrow('Delete failed')
+      await expect(GCSUtil.deletePdf('test/path.pdf')).rejects.toThrow('Failed to delete PDF from GCS: Delete failed')
     })
   })
 
   describe('initialization', () => {
-    it('should initialize storage and bucket on first call', () => {
+    it('should initialize storage and bucket on first call', async () => {
       // Call any method to trigger init
-      GCSUtil.downloadPdf('test.pdf')
+      mockFile.download.mockResolvedValue([Buffer.from('test')])
+      await GCSUtil.downloadPdf('test.pdf')
 
       expect(require('@google-cloud/storage').Storage).toHaveBeenCalledWith({
         keyFilename: expect.stringContaining('gcp-key.json'),
@@ -120,11 +121,16 @@ describe('GCSUtil', () => {
       expect(mockStorage.bucket).toHaveBeenCalledWith('test-bucket')
     })
 
-    it('should reuse initialized storage instance', () => {
-      GCSUtil.downloadPdf('test1.pdf')
-      GCSUtil.downloadPdf('test2.pdf')
+    it('should reuse initialized storage instance', async () => {
+      // Reset the mock call count from beforeEach
+      const Storage = require('@google-cloud/storage').Storage
+      Storage.mockClear()
 
-      expect(require('@google-cloud/storage').Storage).toHaveBeenCalledTimes(1)
+      mockFile.download.mockResolvedValue([Buffer.from('test')])
+      await GCSUtil.downloadPdf('test1.pdf')
+      await GCSUtil.downloadPdf('test2.pdf')
+
+      expect(Storage).toHaveBeenCalledTimes(1)
     })
   })
 })

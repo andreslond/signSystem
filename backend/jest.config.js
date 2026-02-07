@@ -6,9 +6,9 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(uuid)/)',
-  ],
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/__mocks__/uuid.ts',
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,js}',
     '!src/**/*.d.ts',
