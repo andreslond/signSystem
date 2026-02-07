@@ -89,4 +89,5 @@ export type MockQueryBuilder<T = any> = {
   eq: jest.MockedFunction<any>
   single: jest.MockedFunction<() => Promise<SupabaseResult<T>>>
   insert: jest.MockedFunction<() => Promise<SupabaseResult<T>>>
+  update: jest.MockedFunction<any>
 }

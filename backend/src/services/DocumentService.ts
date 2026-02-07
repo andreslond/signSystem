@@ -153,6 +153,15 @@ export class DocumentService {
       const documentId = uuidv4()
       console.log(`[DocumentService] uploadDocument: Generated document ID ${documentId}`)
 
+      // 7. Mark old documents as superseded (same user, same period)
+      await adminRepo.supersedeOldDocuments(
+        request.user_id,
+        request.payroll_period_start,
+        request.payroll_period_end,
+        documentId
+      )
+      console.log(`[DocumentService] uploadDocument: Marked old documents as superseded`)
+
       // 7. Upload to GCS
       uploadedPath = `original/${request.user_id}/${documentId}.pdf`
       await GCSUtil.uploadPdf(uploadedPath, request.pdf)

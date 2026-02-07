@@ -105,6 +105,7 @@ describe('DocumentService', () => {
         checkUserExists: jest.fn(),
         checkIdempotency: jest.fn(),
         insertDocument: jest.fn(),
+        supersedeOldDocuments: jest.fn().mockResolvedValue(undefined),
       }
 
       mockDocumentAdminRepository.mockImplementation(() => mockAdminRepoInstance)
@@ -158,6 +159,48 @@ describe('DocumentService', () => {
         payroll_period_start: '01-01-2025',
         payroll_period_end: '31-01-2025',
       })
+    })
+
+    it('should call supersedeOldDocuments when uploading new document', async () => {
+      const request: UploadDocumentRequest = {
+        pdf: Buffer.from('test pdf'),
+        user_id: 'user-123',
+        employee_id: 456,
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
+      }
+
+      const mockProfile = { employee_id: 456 }
+      const mockInsertedDoc: Document = {
+        id: 'generated-doc-id',
+        user_id: 'user-123',
+        employee_id: 456,
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
+        pdf_original_path: 'original/user-123/generated-doc-id.pdf',
+        pdf_signed_path: null,
+        status: 'PENDING',
+        original_hash: 'computed-hash',
+        signed_hash: null,
+        created_at: '2025-01-01T00:00:00Z',
+        signed_at: null,
+        superseded_by: null,
+        is_active: true,
+      }
+
+      mockAdminRepoInstance.checkUserExists.mockResolvedValue(mockProfile)
+      mockAdminRepoInstance.checkIdempotency.mockResolvedValue(null)
+      mockGCSUtil.uploadPdf.mockResolvedValue(undefined)
+      mockAdminRepoInstance.insertDocument.mockResolvedValue(mockInsertedDoc)
+
+      await DocumentService.uploadDocument(request)
+
+      expect(mockAdminRepoInstance.supersedeOldDocuments).toHaveBeenCalledWith(
+        'user-123',
+        '01-01-2025',
+        '31-01-2025',
+        'generated-doc-id'
+      )
     })
 
     it('should return existing document for idempotent request', async () => {

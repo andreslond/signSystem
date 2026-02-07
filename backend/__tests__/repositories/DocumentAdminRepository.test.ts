@@ -7,18 +7,20 @@ jest.mock('../../src/config/supabase', () => ({
   createSupabaseAdminClient: jest.fn(),
 }))
 
-const createMockQueryBuilder = <T = any>() => {
-  const builder: MockQueryBuilder<T> = {
+// Create a chainable mock for Supabase query builder
+const createChainableMock = () => {
+  // Each method returns this for chaining, but we need to track calls
+  const builder = {
     insert: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn(),
   }
-
   return builder
 }
 
-const mockQueryBuilder = createMockQueryBuilder()
+const mockQueryBuilder = createChainableMock()
 
 const mockSupabaseClient = {
   schema: jest.fn().mockReturnThis(),
