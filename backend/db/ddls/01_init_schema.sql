@@ -177,16 +177,16 @@ GRANT USAGE ON SCHEMA ar_signatures TO authenticated, service_role;
 GRANT SELECT ON ar_nomina.employees TO authenticated;
 GRANT ALL ON ar_nomina.employees TO service_role;
 
-GRANT SELECT ON ar_signatures.documents TO authenticated;
-GRANT SELECT ON ar_signatures.signatures TO authenticated;
-GRANT SELECT ON ar_signatures.profiles TO authenticated;
+GRANT SELECT ON ar_signatures.documents TO authenticated, service_role;
+GRANT SELECT ON ar_signatures.signatures TO authenticated, service_role;
+GRANT SELECT ON ar_signatures.profiles TO authenticated, service_role;
 
-GRANT INSERT ON ar_signatures.documents TO authenticated;
-GRANT INSERT ON ar_signatures.signatures TO authenticated;
-GRANT INSERT ON ar_signatures.profiles TO authenticated;
+GRANT INSERT ON ar_signatures.documents TO authenticated, service_role;
+GRANT INSERT ON ar_signatures.signatures TO authenticated, service_role;
+GRANT INSERT ON ar_signatures.profiles TO authenticated, service_role;
 
-GRANT UPDATE ON ar_signatures.documents TO authenticated;
-GRANT UPDATE ON ar_signatures.profiles TO authenticated;
+GRANT UPDATE ON ar_signatures.documents TO authenticated, service_role;
+GRANT UPDATE ON ar_signatures.profiles TO authenticated, service_role;
 
 -- =========================================
 -- 9. MIGRATION HELPERS
@@ -227,8 +227,8 @@ COMMENT ON TABLE ar_signatures.profiles IS 'Links Supabase auth users to employe
 COMMENT ON TABLE ar_signatures.documents IS 'Payroll documents requiring electronic signatures';
 COMMENT ON TABLE ar_signatures.signatures IS 'Audit trail of signature events';
 
-COMMENT ON COLUMN ar_signatures.documents.payroll_period_start IS 'Start date of payroll period in DD-MM-YYYY format';
-COMMENT ON COLUMN ar_signatures.documents.payroll_period_end IS 'End date of payroll period in DD-MM-YYYY format';
+COMMENT ON COLUMN ar_signatures.documents.payroll_period_start IS 'Start date of payroll period in MM-DD-YYYY format';
+COMMENT ON COLUMN ar_signatures.documents.payroll_period_end IS 'End date of payroll period in MM-DD-YYYY format';
 COMMENT ON COLUMN ar_signatures.documents.status IS 'Document status: PENDING (can be signed), SIGNED (completed), INVALIDATED (superseded)';
 COMMENT ON COLUMN ar_signatures.documents.is_active IS 'Whether this document is the current active version';
 
