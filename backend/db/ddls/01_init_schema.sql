@@ -112,6 +112,7 @@ CREATE INDEX idx_documents_active_period_range ON ar_signatures.documents(
     payroll_period_start,
     payroll_period_end
 ) WHERE is_active = true;
+CREATE INDEX idx_documents_user_created_at_desc ON ar_signatures.documents (user_id, created_at DESC);
 
 -- Signatures indexes
 CREATE INDEX idx_signatures_document_id ON ar_signatures.signatures(document_id);
@@ -224,6 +225,9 @@ WHERE d.is_active = true;
 GRANT USAGE ON SCHEMA ar_signatures TO authenticated, service_role;
 
 -- Grant permissions on tables
+GRANT SELECT ON ar_signatures.employees TO authenticated;
+GRANT ALL ON ar_signatures.employees TO service_role;
+
 GRANT SELECT ON ar_signatures.documents TO authenticated;
 GRANT SELECT ON ar_signatures.signatures TO authenticated;
 GRANT SELECT ON ar_signatures.profiles TO authenticated;
