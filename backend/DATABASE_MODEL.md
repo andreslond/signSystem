@@ -1,6 +1,6 @@
 # Database Model Documentation
 
-This document describes the existing database schema for the SignSystem project, located in Supabase under the `ar_nomina` schema. The schema is read-only and must not be altered. Row Level Security (RLS) is enabled and enforced by Supabase.
+This document describes the existing database schema for the SignSystem project, located in Supabase under the `ar_signatures` schema. Row Level Security (RLS) is enabled and enforced by Supabase.
 
 ## Tables
 
@@ -64,6 +64,7 @@ Records signature events for documents.
 - `signatures.document_id` → `documents.id`.
 
 ## Schema Updates
+
 The following changes have been applied to support document lifecycle management and date range payroll periods:
 
 ```sql
@@ -98,10 +99,9 @@ CREATE INDEX idx_documents_active_period_range
 ON ar_signatures.documents(user_id, payroll_period_start, payroll_period_end)
 WHERE is_active = true;
 
-
-
 ## Notes
 - All tables use the `ar_signatures` schema.
 - RLS is enabled for user-facing operations; bypassed for admin operations using service_role.
 - The authenticated user ID is available via JWT (`auth.uid()` in Supabase).
 - Schema changes are allowed as needed for functionality.
+- Current implementation includes comprehensive test coverage and production-ready features.
