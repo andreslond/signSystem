@@ -170,8 +170,14 @@
               "disabled": false
             },
             {
-              "key": "payroll_period",
-              "value": "2025-01",
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
               "type": "default",
               "disabled": false
             }
@@ -418,8 +424,14 @@
               "disabled": false
             },
             {
-              "key": "payroll_period",
-              "value": "2025-01",
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
               "type": "default",
               "disabled": false
             }
@@ -477,8 +489,14 @@
               "disabled": false
             },
             {
-              "key": "payroll_period",
-              "value": "2025-01",
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
               "type": "default",
               "disabled": false
             }

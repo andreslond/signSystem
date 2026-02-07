@@ -165,34 +165,7 @@ CREATE POLICY "Users can view signatures for their documents" ON ar_signatures.s
 CREATE POLICY "Signatures are manageable by service role" ON ar_signatures.signatures
     FOR ALL USING (auth.role() = 'service_role');
 
--- =========================================
--- 6. FUNCTIONS AND TRIGGERS
--- =========================================
 
--- Function to automatically set superseded_by when invalidating documents
-CREATE OR REPLACE FUNCTION ar_signatures.set_superseded_document()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- When a document becomes inactive, set superseded_by for related documents
-    IF NEW.is_active = false AND OLD.is_active = true THEN
-        -- Mark this document as superseded by... well, it's being invalidated
-        -- This logic might need adjustment based on business rules
-        NULL; -- Placeholder for now
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger for document status changes
-CREATE TRIGGER trigger_document_status_change
-    AFTER UPDATE OF is_active ON ar_signatures.documents
-    FOR EACH ROW
-    EXECUTE FUNCTION ar_signatures.set_superseded_document();
-
--- =========================================
--- 7. VIEWS (Optional)
--- =========================================
 
 -- View for active documents with user and employee information
 CREATE VIEW ar_signatures.active_documents_view AS
