@@ -381,15 +381,30 @@ if (!user_id || !employee_id || !payroll_period_start || !payroll_period_end) {
 
 ### Date Formats
 
-The system uses `DD-MM-YYYY` format for payroll period dates:
+The system uses `DD-MM-YYYY` format for payroll period dates in the API, but PostgreSQL expects `MM-DD-YYYY` format.
+
+Use the [`DateUtil`](backend/src/utils/date.ts) class for conversion:
 
 ```typescript
-// ✅ Validate date format
-const dateRegex = /^\d{2}-\d{2}-\d{4}$/
-if (!dateRegex.test(payroll_period_start)) {
-  throw new Error('payroll_period_start must be in DD-MM-YYYY format')
-}
+import { DateUtil } from '../utils/date'
+
+// Input from API (DD-MM-YYYY)
+const payrollPeriodStart = '31-01-2025'  // January 31, 2025
+
+// Convert to PostgreSQL format (MM-DD-YYYY)
+const postgresFormat = DateUtil.toPostgresFormat(payrollPeriodStart)
+// Result: '01-31-2025'
+
+// Convert back from PostgreSQL to API format
+const apiFormat = DateUtil.fromPostgresFormat(postgresFormat)
+// Result: '31-01-2025'
 ```
+
+**Flow:**
+1. API receives dates in `DD-MM-YYYY` format
+2. Convert to `MM-DD-YYYY` before sending to database
+3. Convert back to `DD-MM-YYYY` for API responses
+
 
 ### Testing
 
@@ -486,19 +501,34 @@ if (existingDoc) {
 
 ### Rollback on Error
 
-If an operation fails after partial completion, roll back:
+If an operation fails after partial completion, roll back all changes:
 
 ```typescript
+// Upload file first, then track if successful
+const signedPath = `signed/${userId}/${documentId}.pdf`
+let signedPathUploaded: string | null = null
+
 try {
-  // ... operations that might fail
+  await GCSUtil.uploadPdf(signedPath, signedPdfBuffer)
+  signedPathUploaded = signedPath
+
+  // Database operations that might fail
+  await this.repository.insertSignature({ ... })
+  await this.repository.updateDocumentAsSigned(documentId, signedHash, signedAt)
 } catch (error) {
-  // Rollback: delete uploaded file
-  if (uploadedPath) {
-    await GCSUtil.deletePdf(uploadedPath)
+  // Rollback: delete uploaded file if it was uploaded
+  if (signedPathUploaded) {
+    try {
+      await GCSUtil.deletePdf(signedPathUploaded)
+    } catch (rollbackError) {
+      console.error(`Failed to rollback GCS file - ${rollbackError.message}`)
+    }
   }
   throw error
 }
 ```
+
+**Important**: When signing a document, the signed PDF must NOT remain in GCS if the signature record fails to insert. The signed PDF and database state must always be consistent.
 
 ### Signature Verification Flow
 

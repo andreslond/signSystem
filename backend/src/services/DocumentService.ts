@@ -4,6 +4,7 @@ import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentRes
 import { GCSUtil } from '../utils/gcs'
 import { PDFUtil, SignatureData } from '../utils/pdf'
 import { HashUtil } from '../utils/hash'
+import { DateUtil } from '../utils/date'
 import { createSupabaseAdminClient } from '../config/supabase'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -79,29 +80,52 @@ export class DocumentService {
 
     // 8. Upload signed PDF to GCS
     const signedPath = `signed/${userId}/${documentId}.pdf`
-    await GCSUtil.uploadPdf(signedPath, signedPdfBuffer)
+    let signedPathUploaded: string | null = null
 
-    // 9. Insert signature record
-    const signedAt = new Date().toISOString()
+    try {
+      await GCSUtil.uploadPdf(signedPath, signedPdfBuffer)
+      signedPathUploaded = signedPath
+      console.log(`[DocumentService] signDocument: Uploaded signed PDF to ${signedPath}`)
 
-    console.log(`[DocumentService] signDocument: Inserting signature record for document ${documentId} by user ${userId}`)
-    await this.documentRepository.insertSignature({
-      document_id: documentId,
-      name: request.fullName,
-      identification_number: request.identificationNumber,
-      ip,
-      user_agent: userAgent,
-      hash_sign: signedHash,
-      signed_at: signedAt
-    })
+      // 9. Insert signature record
+      const signedAt = new Date().toISOString()
 
-    // 10. Update document as signed
-    await this.documentRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
+      console.log(`[DocumentService] signDocument: Inserting signature record for document ${documentId} by user ${userId}`)
+      await this.documentRepository.insertSignature({
+        document_id: documentId,
+        name: request.fullName,
+        identification_number: request.identificationNumber,
+        ip,
+        user_agent: userAgent,
+        hash_sign: signedHash,
+        signed_at: signedAt
+      })
+
+      // 10. Update document as signed
+      await this.documentRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
+      console.log(`[DocumentService] signDocument: Document ${documentId} signed successfully`)
+    } catch (error) {
+      // Rollback: delete signed PDF from GCS if it was uploaded
+      if (signedPathUploaded) {
+        try {
+          await GCSUtil.deletePdf(signedPathUploaded)
+          console.log(`[DocumentService] signDocument: Rolled back GCS file ${signedPathUploaded}`)
+        } catch (rollbackError) {
+          console.error(`[DocumentService] signDocument: Failed to rollback GCS file - ${(rollbackError as Error).message}`)
+        }
+      }
+      console.error(`[DocumentService] signDocument: Error during signing - ${(error as Error).message}`)
+      throw error
+    }
   }
 
   static async uploadDocument(request: UploadDocumentRequest): Promise<UploadDocumentResponse> {
     const adminRepo = new DocumentAdminRepository()
     let uploadedPath: string | null = null
+
+    // Convert dates from DD-MM-YYYY to MM-DD-YYYY for PostgreSQL
+    const payrollPeriodStartPostgres = DateUtil.toPostgresFormat(request.payroll_period_start)
+    const payrollPeriodEndPostgres = DateUtil.toPostgresFormat(request.payroll_period_end)
 
     try {
       console.log(`[DocumentService] uploadDocument: Starting upload for user ${request.user_id}, period ${request.payroll_period_start} to ${request.payroll_period_end}`)
@@ -119,7 +143,7 @@ export class DocumentService {
       }
       console.log(`[DocumentService] uploadDocument: Employee ID matches`)
 
-      // 3. Validate date range
+      // 3. Validate date range (using DD-MM-YYYY format)
       const [startDay, startMonth, startYear] = request.payroll_period_start.split('-').map(Number)
       const [endDay, endMonth, endYear] = request.payroll_period_end.split('-').map(Number)
 
@@ -136,15 +160,21 @@ export class DocumentService {
       const originalHash = HashUtil.sha256(request.pdf)
       console.log(`[DocumentService] uploadDocument: Computed hash ${originalHash}`)
 
-      // 5. Check idempotency
-      const existingDoc = await adminRepo.checkIdempotency(request.user_id, request.payroll_period_start, request.payroll_period_end, originalHash)
+      // 5. Check idempotency (using PostgreSQL date format)
+      const existingDoc = await adminRepo.checkIdempotency(
+        request.user_id,
+        payrollPeriodStartPostgres,
+        payrollPeriodEndPostgres,
+        originalHash
+      )
       if (existingDoc) {
         console.log(`[DocumentService] uploadDocument: Idempotent hit, returning existing document ${existingDoc.id}`)
         return {
           document_id: existingDoc.id,
           status: existingDoc.status as 'PENDING',
-          payroll_period_start: existingDoc.payroll_period_start,
-          payroll_period_end: existingDoc.payroll_period_end,
+          // Return dates in DD-MM-YYYY format
+          payroll_period_start: DateUtil.fromPostgresFormat(existingDoc.payroll_period_start),
+          payroll_period_end: DateUtil.fromPostgresFormat(existingDoc.payroll_period_end),
           idempotent: true
         }
       }
@@ -153,27 +183,26 @@ export class DocumentService {
       const documentId = uuidv4()
       console.log(`[DocumentService] uploadDocument: Generated document ID ${documentId}`)
 
-      // 7. Mark old documents as superseded (same user, same period)
+      // 7. Mark old documents as superseded (using PostgreSQL date format)
       await adminRepo.supersedeOldDocuments(
         request.user_id,
-        request.payroll_period_start,
-        request.payroll_period_end,
+        payrollPeriodStartPostgres,
+        payrollPeriodEndPostgres,
         documentId
       )
-      console.log(`[DocumentService] uploadDocument: Marked old documents as superseded`)
 
-      // 7. Upload to GCS
+      // 8. Upload to GCS
       uploadedPath = `original/${request.user_id}/${documentId}.pdf`
       await GCSUtil.uploadPdf(uploadedPath, request.pdf)
       console.log(`[DocumentService] uploadDocument: Uploaded to GCS at ${uploadedPath}`)
 
-      // 8. Insert document record
+      // 9. Insert document record (using PostgreSQL date format)
       const documentData = {
         id: documentId,
         user_id: request.user_id,
         employee_id: request.employee_id,
-        payroll_period_start: request.payroll_period_start,
-        payroll_period_end: request.payroll_period_end,
+        payroll_period_start: payrollPeriodStartPostgres,
+        payroll_period_end: payrollPeriodEndPostgres,
         pdf_original_path: uploadedPath,
         status: 'PENDING' as const,
         original_hash: originalHash,
@@ -187,8 +216,9 @@ export class DocumentService {
       return {
         document_id: insertedDoc.id,
         status: insertedDoc.status as 'PENDING',
-        payroll_period_start: insertedDoc.payroll_period_start,
-        payroll_period_end: insertedDoc.payroll_period_end
+        // Return dates in DD-MM-YYYY format
+        payroll_period_start: DateUtil.fromPostgresFormat(insertedDoc.payroll_period_start),
+        payroll_period_end: DateUtil.fromPostgresFormat(insertedDoc.payroll_period_end)
       }
 
     } catch (error) {

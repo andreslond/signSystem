@@ -127,8 +127,9 @@ describe('DocumentService', () => {
         id: 'generated-doc-id',
         user_id: 'user-123',
         employee_id: 456,
+        // Database stores in MM-DD-YYYY format
         payroll_period_start: '01-01-2025',
-        payroll_period_end: '31-01-2025',
+        payroll_period_end: '01-31-2025',
         pdf_original_path: 'original/user-123/generated-doc-id.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -149,10 +150,12 @@ describe('DocumentService', () => {
 
       expect(mockAdminRepoInstance.checkUserExists).toHaveBeenCalledWith('user-123')
       expect(mockHashUtil.sha256).toHaveBeenCalledWith(Buffer.from('test pdf'))
-      expect(mockAdminRepoInstance.checkIdempotency).toHaveBeenCalledWith('user-123', '01-01-2025', '31-01-2025', 'computed-hash')
+      // Database calls use MM-DD-YYYY format
+      expect(mockAdminRepoInstance.checkIdempotency).toHaveBeenCalledWith('user-123', '01-01-2025', '01-31-2025', 'computed-hash')
       expect(mockUuidV4).toHaveBeenCalled()
       expect(mockGCSUtil.uploadPdf).toHaveBeenCalledWith('original/user-123/generated-doc-id.pdf', Buffer.from('test pdf'))
       expect(mockAdminRepoInstance.insertDocument).toHaveBeenCalled()
+      // Response uses DD-MM-YYYY format
       expect(result).toEqual({
         document_id: 'generated-doc-id',
         status: 'PENDING',
@@ -176,7 +179,7 @@ describe('DocumentService', () => {
         user_id: 'user-123',
         employee_id: 456,
         payroll_period_start: '01-01-2025',
-        payroll_period_end: '31-01-2025',
+        payroll_period_end: '01-31-2025',
         pdf_original_path: 'original/user-123/generated-doc-id.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -195,10 +198,11 @@ describe('DocumentService', () => {
 
       await DocumentService.uploadDocument(request)
 
+      // Database calls use MM-DD-YYYY format
       expect(mockAdminRepoInstance.supersedeOldDocuments).toHaveBeenCalledWith(
         'user-123',
         '01-01-2025',
-        '31-01-2025',
+        '01-31-2025',
         'generated-doc-id'
       )
     })
@@ -212,12 +216,13 @@ describe('DocumentService', () => {
         payroll_period_end: '31-01-2025',
       }
 
+      // Database stores in MM-DD-YYYY format
       const existingDoc: Document = {
         id: 'existing-doc-id',
         user_id: 'user-123',
         employee_id: 456,
         payroll_period_start: '01-01-2025',
-        payroll_period_end: '31-01-2025',
+        payroll_period_end: '01-31-2025',
         pdf_original_path: 'original/user-123/existing-doc-id.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -230,12 +235,14 @@ describe('DocumentService', () => {
       }
 
       mockAdminRepoInstance.checkUserExists.mockResolvedValue({ employee_id: 456 })
+      // Database calls use MM-DD-YYYY format
       mockAdminRepoInstance.checkIdempotency.mockResolvedValue(existingDoc)
 
       const result = await DocumentService.uploadDocument(request)
 
       expect(mockGCSUtil.uploadPdf).not.toHaveBeenCalled()
       expect(mockAdminRepoInstance.insertDocument).not.toHaveBeenCalled()
+      // Response uses DD-MM-YYYY format
       expect(result).toEqual({
         document_id: 'existing-doc-id',
         status: 'PENDING',
@@ -283,6 +290,7 @@ describe('DocumentService', () => {
       }
 
       mockAdminRepoInstance.checkUserExists.mockResolvedValue({ employee_id: 456 })
+      // Database calls use MM-DD-YYYY format
       mockAdminRepoInstance.checkIdempotency.mockResolvedValue(null)
       mockGCSUtil.uploadPdf.mockResolvedValue(undefined)
       mockAdminRepoInstance.insertDocument.mockRejectedValue(new Error('DB Error'))

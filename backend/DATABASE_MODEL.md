@@ -32,8 +32,8 @@ Stores payroll documents for signing.
 - **id** (uuid, Primary Key): Unique identifier for the document.
 - **user_id** (uuid, Foreign Key to profiles.id): The user who owns the document.
 - **employee_id** (bigint, Foreign Key to employees.id): The employee associated with the document.
-- **payroll_period_start** (date): Start date of the payroll period (DD-MM-YYYY format).
-- **payroll_period_end** (date): End date of the payroll period (DD-MM-YYYY format).
+- **payroll_period_start** (date): Start date of the payroll period (MM-DD-YYYY format).
+- **payroll_period_end** (date): End date of the payroll period (MM-DD-YYYY format).
 - **pdf_original_path** (text): Path to the original PDF file.
 - **pdf_signed_path** (text): Path to the signed PDF file (null if not signed).
 - **status** (text): Status of the document ('PENDING', 'SIGNED', or 'INVALIDATED').

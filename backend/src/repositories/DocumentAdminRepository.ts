@@ -74,7 +74,7 @@ export class DocumentAdminRepository {
       console.warn(`[DocumentAdminRepository] supersedeOldDocuments: Could not update old documents - ${error.message}`)
       // Don't throw - this is not a critical error, the new document was already inserted
     } else {
-      console.log(`[DocumentAdminRepository] supersedeOldDocuments: Marked old documents as superseded for user ${userId}`)
+      console.log(`[DocumentAdminRepository] supersedeOldDocuments: Marked old documents as superseded for user ${userId} in period ${payrollPeriodStart} to ${payrollPeriodEnd}`)
     }
   }
 }
