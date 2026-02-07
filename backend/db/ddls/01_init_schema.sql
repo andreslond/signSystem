@@ -28,24 +28,24 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Table: employees
 -- Stores employee information linked to external systems
-CREATE TABLE ar_signatures.employees (
-    id bigint PRIMARY KEY,
-    name text NOT NULL,
-    email text,
-    identification_number text,
-    identification_type text,
-    active boolean DEFAULT true,
-    company_id bigint,
-    external_employee_id text,
-    external_provider_id text,
-    created_at timestamp with time zone DEFAULT now()
-);
+-- CREATE TABLE ar_nomina.employees (
+--     id bigint PRIMARY KEY,
+--     name text NOT NULL,
+--     email text,
+--     identification_number text,
+--     identification_type text,
+--     active boolean DEFAULT true,
+--     company_id bigint,
+--     external_employee_id text,
+--     external_provider_id text,
+--     created_at timestamp with time zone DEFAULT now()
+-- );
 
 -- Table: profiles
 -- Links Supabase Auth users to employees
 CREATE TABLE ar_signatures.profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    employee_id bigint REFERENCES ar_signatures.employees(id),
+    employee_id bigint REFERENCES ar_nomina.employees(id),
     role_type text NOT NULL DEFAULT 'employee' CHECK (role_type IN ('employee', 'leader', 'support')),
     created_at timestamp with time zone DEFAULT now()
 );
@@ -55,7 +55,7 @@ CREATE TABLE ar_signatures.profiles (
 CREATE TABLE ar_signatures.documents (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id uuid NOT NULL REFERENCES ar_signatures.profiles(id) ON DELETE CASCADE,
-    employee_id bigint NOT NULL REFERENCES ar_signatures.employees(id),
+    employee_id bigint NOT NULL REFERENCES ar_nomina.employees(id),
     payroll_period_start date NOT NULL,
     payroll_period_end date NOT NULL,
     pdf_original_path text NOT NULL,
@@ -96,8 +96,8 @@ CREATE TABLE ar_signatures.signatures (
 -- =========================================
 
 -- Employees indexes
-CREATE INDEX idx_employees_active ON ar_signatures.employees(active) WHERE active = true;
-CREATE INDEX idx_employees_external_id ON ar_signatures.employees(external_employee_id);
+CREATE INDEX idx_employees_active ON ar_nomina.employees(active) WHERE active = true;
+CREATE INDEX idx_employees_external_id ON ar_nomina.employees(external_employee_id);
 
 -- Profiles indexes
 CREATE INDEX idx_profiles_employee_id ON ar_signatures.profiles(employee_id);
@@ -123,16 +123,16 @@ CREATE INDEX idx_signatures_signed_at ON ar_signatures.signatures(signed_at DESC
 -- =========================================
 
 -- Enable RLS on all tables
-ALTER TABLE ar_signatures.employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ar_nomina.employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ar_signatures.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ar_signatures.documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ar_signatures.signatures ENABLE ROW LEVEL SECURITY;
 
 -- Employees policies (admin/service role only for writes, read access for authenticated users)
-CREATE POLICY "Employees are viewable by authenticated users" ON ar_signatures.employees
+CREATE POLICY "Employees are viewable by authenticated users" ON ar_nomina.employees
     FOR SELECT USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Employees are manageable by service role" ON ar_signatures.employees
+CREATE POLICY "Employees are manageable by service role" ON ar_nomina.employees
     FOR ALL USING (auth.role() = 'service_role');
 
 -- Profiles policies
@@ -166,30 +166,6 @@ CREATE POLICY "Signatures are manageable by service role" ON ar_signatures.signa
     FOR ALL USING (auth.role() = 'service_role');
 
 
-
--- View for active documents with user and employee information
-CREATE VIEW ar_signatures.active_documents_view AS
-SELECT
-    d.id,
-    d.user_id,
-    d.employee_id,
-    d.payroll_period_start,
-    d.payroll_period_end,
-    d.pdf_original_path,
-    d.pdf_signed_path,
-    d.status,
-    d.original_hash,
-    d.signed_hash,
-    d.created_at,
-    d.signed_at,
-    p.role_type,
-    e.name as employee_name,
-    e.email as employee_email
-FROM ar_signatures.documents d
-JOIN ar_signatures.profiles p ON d.user_id = p.id
-JOIN ar_signatures.employees e ON d.employee_id = e.id
-WHERE d.is_active = true;
-
 -- =========================================
 -- 8. GRANTS AND PERMISSIONS
 -- =========================================
@@ -198,8 +174,8 @@ WHERE d.is_active = true;
 GRANT USAGE ON SCHEMA ar_signatures TO authenticated, service_role;
 
 -- Grant permissions on tables
-GRANT SELECT ON ar_signatures.employees TO authenticated;
-GRANT ALL ON ar_signatures.employees TO service_role;
+GRANT SELECT ON ar_nomina.employees TO authenticated;
+GRANT ALL ON ar_nomina.employees TO service_role;
 
 GRANT SELECT ON ar_signatures.documents TO authenticated;
 GRANT SELECT ON ar_signatures.signatures TO authenticated;
@@ -211,9 +187,6 @@ GRANT INSERT ON ar_signatures.profiles TO authenticated;
 
 GRANT UPDATE ON ar_signatures.documents TO authenticated;
 GRANT UPDATE ON ar_signatures.profiles TO authenticated;
-
--- Grant permissions on views
-GRANT SELECT ON ar_signatures.active_documents_view TO authenticated, service_role;
 
 -- =========================================
 -- 9. MIGRATION HELPERS
@@ -249,7 +222,7 @@ GRANT SELECT ON ar_signatures.active_documents_view TO authenticated, service_ro
 
 COMMENT ON SCHEMA ar_signatures IS 'Schema containing all tables and functions for the SignSystem document signing functionality';
 
-COMMENT ON TABLE ar_signatures.employees IS 'Employee information synchronized from external HR systems';
+COMMENT ON TABLE ar_nomina.employees IS 'Employee information synchronized from external HR systems';
 COMMENT ON TABLE ar_signatures.profiles IS 'Links Supabase auth users to employee records';
 COMMENT ON TABLE ar_signatures.documents IS 'Payroll documents requiring electronic signatures';
 COMMENT ON TABLE ar_signatures.signatures IS 'Audit trail of signature events';
