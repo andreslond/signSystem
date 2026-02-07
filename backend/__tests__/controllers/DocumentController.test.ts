@@ -36,7 +36,8 @@ describe('DocumentController', () => {
             id: 'doc-1',
             user_id: 'user-123',
             employee_id: 456,
-            payroll_period: '2025-01',
+            payroll_period_start: '01-01-2025',
+            payroll_period_end: '31-01-2025',
             pdf_original_path: 'original/user-123/doc-1.pdf',
             pdf_signed_path: null,
             status: 'PENDING',
@@ -87,7 +88,8 @@ describe('DocumentController', () => {
           id: 'doc-123',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
           pdf_original_path: 'original/user-123/doc-123.pdf',
           pdf_signed_path: null,
           status: 'PENDING',
@@ -139,7 +141,8 @@ describe('DocumentController', () => {
       const mockUploadResponse: UploadDocumentResponse = {
         document_id: 'doc-123',
         status: 'PENDING',
-        payroll_period: '01-01-2025',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       mockDocumentService.uploadDocument = jest.fn().mockResolvedValue(mockUploadResponse)
@@ -149,7 +152,8 @@ describe('DocumentController', () => {
         body: {
           user_id: 'user-123',
           employee_id: '456',
-          payroll_period: '01-01-2025',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
         },
       } as any
 
@@ -159,7 +163,8 @@ describe('DocumentController', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '01-01-2025',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       })
       expect(mockResponse.status).toHaveBeenCalledWith(201)
       expect(mockResponse.json).toHaveBeenCalledWith(mockUploadResponse)
@@ -171,7 +176,8 @@ describe('DocumentController', () => {
         body: {
           user_id: 'user-123',
           employee_id: '456',
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
         },
       } as any
 
@@ -186,30 +192,31 @@ describe('DocumentController', () => {
         file: { buffer: Buffer.from('test pdf') } as any,
         body: {
           user_id: 'user-123',
-          // missing employee_id and payroll_period
+          // missing employee_id and payroll_period fields
         },
       } as any
 
       await controller.uploadDocument(mockRequest as Request, mockResponse as Response)
 
       expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'user_id, employee_id, and payroll_period are required' })
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'user_id, employee_id, payroll_period_start, and payroll_period_end are required' })
     })
 
-    it('should return 400 for invalid payroll_period format', async () => {
+    it('should return 400 for invalid date format', async () => {
       mockRequest = {
         file: { buffer: Buffer.from('test pdf') } as any,
         body: {
           user_id: 'user-123',
           employee_id: '456',
-          payroll_period: 'invalid-format',
+          payroll_period_start: 'invalid-format',
+          payroll_period_end: '31-01-2025',
         },
       } as any
 
       await controller.uploadDocument(mockRequest as Request, mockResponse as Response)
 
       expect(mockResponse.status).toHaveBeenCalledWith(400)
-      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'payroll_period must be in YYYY-MM format' })
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'payroll_period_start and payroll_period_end must be in DD-MM-YYYY format' })
     })
 
     it('should handle service errors with appropriate status codes', async () => {
@@ -220,7 +227,8 @@ describe('DocumentController', () => {
         body: {
           user_id: 'user-123',
           employee_id: '456',
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
         },
       } as any
 
@@ -238,7 +246,8 @@ describe('DocumentController', () => {
         body: {
           user_id: 'user-123',
           employee_id: '456',
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
         },
       } as any
 

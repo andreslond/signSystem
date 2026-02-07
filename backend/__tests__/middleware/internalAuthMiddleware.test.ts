@@ -16,10 +16,11 @@ describe('internalAuthMiddleware', () => {
     process.env = { ...originalEnv }
 
     jsonSpy = jest.fn()
-    statusSpy = jest.fn().mockReturnValue({ json: jsonSpy })
+    statusSpy = jest.fn().mockReturnThis()
 
     mockResponse = {
       status: statusSpy,
+      json: jsonSpy,
     } as any
 
     mockNext = jest.fn()
@@ -71,7 +72,7 @@ describe('internalAuthMiddleware', () => {
 
     expect(mockNext).not.toHaveBeenCalled()
     expect(mockResponse.status).toHaveBeenCalledWith(401)
-    expect(mockResponse.json).toHaveBeenCalledWith({ error: 'No internal API key provided' })
+    expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid internal API key' })
   })
 
   it('should return 401 when token does not match', async () => {

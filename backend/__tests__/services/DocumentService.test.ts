@@ -37,7 +37,8 @@ describe('DocumentService', () => {
             id: 'doc-1',
             user_id: 'user-123',
             employee_id: 456,
-            payroll_period: '2025-01',
+            payroll_period_start: '01-01-2025',
+            payroll_period_end: '31-01-2025',
             pdf_original_path: 'original/user-123/doc-1.pdf',
             pdf_signed_path: null,
             status: 'PENDING',
@@ -69,7 +70,8 @@ describe('DocumentService', () => {
           id: 'doc-123',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period: '2025-01',
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
           pdf_original_path: 'original/user-123/doc-123.pdf',
           pdf_signed_path: null,
           status: 'PENDING',
@@ -115,7 +117,8 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       const mockProfile = { employee_id: 456 }
@@ -123,7 +126,8 @@ describe('DocumentService', () => {
         id: 'generated-doc-id',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/generated-doc-id.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -144,14 +148,15 @@ describe('DocumentService', () => {
 
       expect(mockAdminRepoInstance.checkUserExists).toHaveBeenCalledWith('user-123')
       expect(mockHashUtil.sha256).toHaveBeenCalledWith(Buffer.from('test pdf'))
-      expect(mockAdminRepoInstance.checkIdempotency).toHaveBeenCalledWith('user-123', '2025-01', 'computed-hash')
+      expect(mockAdminRepoInstance.checkIdempotency).toHaveBeenCalledWith('user-123', '01-01-2025', '31-01-2025', 'computed-hash')
       expect(mockUuidV4).toHaveBeenCalled()
       expect(mockGCSUtil.uploadPdf).toHaveBeenCalledWith('original/user-123/generated-doc-id.pdf', Buffer.from('test pdf'))
       expect(mockAdminRepoInstance.insertDocument).toHaveBeenCalled()
       expect(result).toEqual({
         document_id: 'generated-doc-id',
         status: 'PENDING',
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       })
     })
 
@@ -160,14 +165,16 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       const existingDoc: Document = {
         id: 'existing-doc-id',
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         pdf_original_path: 'original/user-123/existing-doc-id.pdf',
         pdf_signed_path: null,
         status: 'PENDING',
@@ -189,7 +196,8 @@ describe('DocumentService', () => {
       expect(result).toEqual({
         document_id: 'existing-doc-id',
         status: 'PENDING',
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
         idempotent: true,
       })
     })
@@ -199,7 +207,8 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       mockAdminRepoInstance.checkUserExists.mockResolvedValue(null)
@@ -212,7 +221,8 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       mockAdminRepoInstance.checkUserExists.mockResolvedValue({ employee_id: 789 })
@@ -225,7 +235,8 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period: '2025-01',
+        payroll_period_start: '01-01-2025',
+        payroll_period_end: '31-01-2025',
       }
 
       mockAdminRepoInstance.checkUserExists.mockResolvedValue({ employee_id: 456 })

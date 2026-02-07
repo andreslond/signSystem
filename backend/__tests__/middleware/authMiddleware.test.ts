@@ -26,7 +26,7 @@ describe('authMiddleware', () => {
     jest.clearAllMocks()
 
     jsonSpy = jest.fn()
-    statusSpy = jest.fn().mockReturnValue({ json: jsonSpy })
+    statusSpy = jest.fn().mockReturnThis()
 
     mockResponse = {
       status: statusSpy,
