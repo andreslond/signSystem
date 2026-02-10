@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert, ArrowDown } from 'lucide-react';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
@@ -11,6 +11,30 @@ export default function DocumentViewerPending() {
     const { id } = useParams();
     const [showModal, setShowModal] = useState(false);
     const [password, setPassword] = useState('');
+    const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            
+            // Hide indicator when user has scrolled down (any positive scroll)
+            // Show it again only if user scrolls back to top
+            const shouldShow = currentScrollY < 100;
+            
+            // Only update if changed to avoid unnecessary re-renders
+            if (shouldShow !== showScrollIndicator) {
+                setShowScrollIndicator(shouldShow);
+            }
+            
+            lastScrollY = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [showScrollIndicator]);
 
     const handleSign = () => {
         setShowModal(true);
@@ -86,6 +110,16 @@ export default function DocumentViewerPending() {
                             </div>
                             <span className="text-[16px] font-extrabold text-primary">$2,500,000</span>
                         </div>
+
+                        {/* Sign Button - Below Total Amount */}
+                        <div className="mt-4">
+                            <Button
+                                onClick={handleSign}
+                                className="w-full"
+                            >
+                                Firmar documento
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -97,15 +131,19 @@ export default function DocumentViewerPending() {
                     </p>
                 </div>
 
-                {/* Sticky Action Button Container */}
-                <div className="fixed bottom-24 left-0 right-0 px-6 max-w-[440px] mx-auto z-10">
-                    <Button
-                        onClick={handleSign}
-                        className="w-full shadow-xl shadow-primary/30"
+
+                {/* Scroll Indicator - Guides user to Sign Button */}
+                {showScrollIndicator && (
+                    <div 
+                        className="fixed bottom-24 left-0 right-0 px-6 max-w-[440px] mx-auto z-10 animate-bounce"
+                        onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
                     >
-                        Firmar documento
-                    </Button>
-                </div>
+                        <div className="bg-primary text-white px-4 py-2 rounded-full text-sm font-medium flex items-center justify-center gap-2 shadow-lg cursor-pointer">
+                            <span>Firmar documento</span>
+                            <ArrowDown size={16} />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Signature Confirmation Modal */}

@@ -39,7 +39,7 @@ export default function Login() {
                         </h1>
                     </div>
                     <p className="text-white/80 text-sm font-medium">
-                        Gestión integral de personal y nómina
+                        Gestión integral de personal
                     </p>
                 </div>
 
@@ -49,7 +49,7 @@ export default function Login() {
                         Bienvenido
                     </h2>
                     <p className="text-text-secondary text-sm mb-8 leading-relaxed">
-                        Inicia sesión para gestionar tu información laboral.
+                        Inicia sesión para gestionar tu información.
                     </p>
 
                     <form onSubmit={handleLogin} className="space-y-6">
