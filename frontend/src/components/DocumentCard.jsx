@@ -1,43 +1,70 @@
-import React from 'react';
-import { FileText, ChevronRight, Clock, CheckCircle } from 'lucide-react';
-import { Card, CardBody } from './ui/Card';
-import { useNavigate } from 'react-router-dom';
+import { ChevronRight, FileText, ReceiptText } from 'lucide-react';
 
-export default function DocumentCard({ doc }) {
-    const navigate = useNavigate();
+export default function DocumentCard({
+    title,
+    subtitle,
+    status,
+    amount,
+    type = 'receipt', // 'receipt' or 'document'
+    onClick,
+    className = ''
+}) {
+    const Icon = type === 'receipt' ? ReceiptText : FileText;
 
-    const handleClick = () => {
-        navigate(`/documents/${doc.id}`);
+    const statusBadge = {
+        signed: {
+            label: 'Firmado',
+            classes: 'bg-[#f2f4f7] text-[#475467]'
+        },
+        pending: {
+            label: 'Pendiente',
+            classes: 'bg-[#fffaeb] text-[#b54708]'
+        }
     };
 
-    const statusColor = doc.status === 'signed' ? 'text-green-500' : 'text-amber-500';
-    const StatusIcon = doc.status === 'signed' ? CheckCircle : Clock;
-
     return (
-        <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={handleClick}>
-            <CardBody className="p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${doc.status === 'signed' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
-                        <FileText className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                            {doc.title}
-                        </h3>
-                        <p className="text-sm text-gray-500">{doc.subtitle}</p>
-                    </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                    {/* Mobile view might hide specific status text, keep icon */}
-                    <div className="flex flex-col items-end">
-                        <span className={`text-xs font-medium uppercase tracking-wider ${statusColor} hidden sm:block`}>
-                            {doc.status === 'signed' ? 'Firmado' : 'Pendiente'}
+        <div
+            onClick={onClick}
+            className={`
+                bg-white rounded-[20px] p-5
+                border border-transparent
+                shadow-sm hover:shadow-md
+                transition-all duration-200
+                cursor-pointer flex items-center gap-4
+                ${className}
+            `}
+        >
+            {/* Document Icon Box */}
+            <div className="bg-[#f9fafb] p-3 rounded-2xl text-text-primary">
+                <Icon size={24} strokeWidth={1.5} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-0.5">
+                    <h3 className="text-[17px] font-bold text-text-primary truncate">
+                        {title}
+                    </h3>
+                    {status && statusBadge[status] && (
+                        <span className={`${statusBadge[status].classes} px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider`}>
+                            {statusBadge[status].label}
                         </span>
-                        <span className="text-xs text-gray-400 mt-0.5">{doc.date}</span>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                    )}
                 </div>
-            </CardBody>
-        </Card>
+                <div className="flex items-end justify-between">
+                    <p className="text-[13px] text-text-secondary font-medium">
+                        {subtitle}
+                    </p>
+                    {amount && (
+                        <p className="text-[15px] font-bold text-text-primary">
+                            {amount}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            <div className="text-text-muted/40">
+                <ChevronRight size={20} strokeWidth={2.5} />
+            </div>
+        </div>
     );
 }
