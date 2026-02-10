@@ -1,6 +1,6 @@
 import { PostgrestError } from '@supabase/supabase-js'
 import { DocumentAdminRepository } from '../../src/repositories/DocumentAdminRepository'
-import { Document, MockQueryBuilder } from '../../src/types'
+import { Document, SignatureData } from '../../src/types'
 
 // Mock Supabase
 jest.mock('../../src/config/supabase', () => ({
@@ -9,20 +9,18 @@ jest.mock('../../src/config/supabase', () => ({
 
 // Create a chainable mock for Supabase query builder
 const createChainableMock = () => {
-  // Each method returns this for chaining, but we need to track calls
-  const builder = {
-    insert: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn(),
-  }
+  const builder: any = {}
+  builder.select = jest.fn().mockReturnValue(builder)
+  builder.insert = jest.fn().mockReturnValue(builder)
+  builder.update = jest.fn().mockReturnValue(builder)
+  builder.eq = jest.fn().mockReturnValue(builder)
+  builder.single = jest.fn()
   return builder
 }
 
 const mockQueryBuilder = createChainableMock()
 
-const mockSupabaseClient = {
+const mockSupabaseClient: any = {
   schema: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnValue(mockQueryBuilder),
 }
@@ -35,6 +33,12 @@ describe('DocumentAdminRepository', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // Reset all mock implementations
+    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.insert.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.update.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.eq.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null })
     repository = new DocumentAdminRepository()
   })
 
@@ -56,8 +60,10 @@ describe('DocumentAdminRepository', () => {
       mockQueryBuilder.single.mockResolvedValue({
         data: null,
         error: new PostgrestError(
-          { message: 'More than 1 or no items where returned when requesting a singular response', 
-            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116', })
+          {
+            message: 'More than 1 or no items where returned when requesting a singular response',
+            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116',
+          })
       })
 
       const result = await repository.checkUserExists('non-existent-user')
@@ -109,8 +115,10 @@ describe('DocumentAdminRepository', () => {
       mockQueryBuilder.single.mockResolvedValue({
         data: null,
         error: new PostgrestError(
-          { message: 'More than 1 or no items where returned when requesting a singular response', 
-            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116', })
+          {
+            message: 'More than 1 or no items where returned when requesting a singular response',
+            details: 'RLS denied the insert', hint: 'Check your policies', code: 'PGRST116',
+          })
       })
 
       const result = await repository.checkIdempotency('user-123', '01-01-2025', '31-01-2025', 'hash123')
@@ -148,7 +156,7 @@ describe('DocumentAdminRepository', () => {
         signed_at: null,
         created_at: '2025-01-01T00:00:00Z',
       }
-      mockQueryBuilder.single.mockResolvedValue({ data: mockInsertedDocument, error: null }) 
+      mockQueryBuilder.single.mockResolvedValue({ data: mockInsertedDocument, error: null })
 
       const result = await repository.insertDocument(documentData)
 
@@ -176,6 +184,71 @@ describe('DocumentAdminRepository', () => {
       mockQueryBuilder.single.mockRejectedValue(error)
 
       await expect(repository.insertDocument(documentData)).rejects.toThrow('Insert failed')
+    })
+  })
+
+  describe('insertSignature', () => {
+    it('should insert signature successfully', async () => {
+      const signatureData: SignatureData = {
+        document_id: 'doc-123',
+        name: 'John Doe',
+        identification_number: '123456789',
+        ip: '192.168.1.1',
+        user_agent: 'Test Agent',
+        hash_sign: 'signature_hash',
+        signed_at: '2025-01-01T00:00:00Z',
+      }
+
+      // insert() is not chained with eq() in implementation, so we mock the return value of insert() directly
+      mockQueryBuilder.insert.mockResolvedValue({ error: null })
+
+      await expect(repository.insertSignature(signatureData)).resolves.toBeUndefined()
+
+      expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
+      expect(mockSupabaseClient.from).toHaveBeenCalledWith('signatures')
+      expect(mockQueryBuilder.insert).toHaveBeenCalledWith(signatureData)
+    })
+
+    it('should throw error on insert failure', async () => {
+      const signatureData: SignatureData = {
+        document_id: 'doc-123',
+        name: 'John Doe',
+        identification_number: '123456789',
+        ip: '192.168.1.1',
+        user_agent: 'Test Agent',
+        hash_sign: 'signature_hash',
+        signed_at: '2025-01-01T00:00:00Z',
+      }
+
+      const error = new Error('Insert failed')
+      mockQueryBuilder.insert.mockResolvedValue({ error })
+
+      await expect(repository.insertSignature(signatureData)).rejects.toThrow('Insert failed')
+    })
+  })
+
+  describe('updateDocumentAsSigned', () => {
+    it('should update document as signed successfully', async () => {
+      // Set up the chain correctly: update() returns builder, then eq() returns { error: null }
+      mockQueryBuilder.eq.mockResolvedValue({ error: null })
+
+      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).resolves.toBeUndefined()
+
+      expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
+      expect(mockSupabaseClient.from).toHaveBeenCalledWith('documents')
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({
+        status: 'SIGNED',
+        signed_hash: 'signed_hash',
+        signed_at: '2025-01-01T00:00:00Z',
+      })
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'doc-123')
+    })
+
+    it('should throw error on update failure', async () => {
+      const error = new Error('Update failed')
+      mockQueryBuilder.eq.mockResolvedValue({ error })
+
+      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).rejects.toThrow('Update failed')
     })
   })
 })
