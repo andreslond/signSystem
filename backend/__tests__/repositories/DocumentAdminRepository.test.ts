@@ -251,4 +251,41 @@ describe('DocumentAdminRepository', () => {
       await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).rejects.toThrow('Update failed')
     })
   })
+
+  describe('supersedeOldDocuments', () => {
+    it('should update old documents as superseded', async () => {
+      // Set up the chain: update() returns builder, then each eq() returns builder, last eq() returns resolved promise
+      mockQueryBuilder.eq
+        .mockReturnValueOnce(mockQueryBuilder)  // user_id
+        .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_start
+        .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_end
+        .mockResolvedValueOnce({ error: null }) // is_active (last one)
+
+      await expect(repository.supersedeOldDocuments('user-123', '01-01-2025', '31-01-2025', 'new-doc-id')).resolves.toBeUndefined()
+
+      expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
+      expect(mockSupabaseClient.from).toHaveBeenCalledWith('documents')
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith({
+        is_active: false,
+        superseded_by: 'new-doc-id',
+        status: 'INVALIDATED',
+      })
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-123')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_start', '01-01-2025')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_end', '31-01-2025')
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('is_active', true)
+    })
+
+    it('should not throw error on database error (non-critical operation)', async () => {
+      // Set up the chain with error on last eq() call
+      mockQueryBuilder.eq
+        .mockReturnValueOnce(mockQueryBuilder)  // user_id
+        .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_start
+        .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_end
+        .mockResolvedValueOnce({ error: new Error('Update failed') }) // is_active (last one)
+
+      // supersedeOldDocuments does not throw - it logs a warning
+      await expect(repository.supersedeOldDocuments('user-123', '01-01-2025', '31-01-2025', 'new-doc-id')).resolves.toBeUndefined()
+    })
+  })
 })

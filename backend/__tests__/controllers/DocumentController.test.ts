@@ -256,5 +256,158 @@ describe('DocumentController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(500)
       expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Unexpected error' })
     })
+
+    it('should return 400 when start date is after end date', async () => {
+      mockDocumentService.uploadDocument = jest.fn().mockRejectedValue(new Error('Payroll period start date must be before end date'))
+
+      mockRequest = {
+        file: { buffer: Buffer.from('test pdf') } as any,
+        body: {
+          user_id: 'user-123',
+          employee_id: '456',
+          payroll_period_start: '31-01-2025',
+          payroll_period_end: '01-01-2025',
+        },
+      } as any
+
+      await controller.uploadDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Payroll period start date must be before end date' })
+    })
+  })
+
+  describe('signDocument', () => {
+    it('should sign document successfully', async () => {
+      const mockServiceInstance = {
+        signDocument: jest.fn().mockResolvedValue(undefined),
+      }
+
+      mockRequest = {
+        params: { id: 'doc-123' },
+        user: { id: 'user-123', email: 'test@example.com' },
+        body: {
+          password: 'password123',
+          fullName: 'John Doe',
+          identificationNumber: '123456789',
+        },
+        ip: '192.168.1.1',
+        connection: { remoteAddress: '192.168.1.1' } as any,
+        get: jest.fn().mockReturnValue('Test Agent'),
+        documentService: mockServiceInstance as any,
+      } as any
+
+      await controller.signDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockServiceInstance.signDocument).toHaveBeenCalledWith(
+        'doc-123',
+        'user-123',
+        { password: 'password123', fullName: 'John Doe', identificationNumber: '123456789' },
+        '192.168.1.1',
+        'Test Agent',
+        'test@example.com'
+      )
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Document signed successfully' })
+    })
+
+    it('should return 404 when document not found', async () => {
+      const mockServiceInstance = {
+        signDocument: jest.fn().mockRejectedValue(new Error('Document not found')),
+      }
+
+      mockRequest = {
+        params: { id: 'doc-123' },
+        user: { id: 'user-123', email: 'test@example.com' },
+        body: {
+          password: 'password123',
+          fullName: 'John Doe',
+          identificationNumber: '123456789',
+        },
+        ip: '192.168.1.1',
+        connection: { remoteAddress: '192.168.1.1' } as any,
+        get: jest.fn().mockReturnValue('Test Agent'),
+        documentService: mockServiceInstance as any,
+      } as any
+
+      await controller.signDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404)
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Document not found' })
+    })
+
+    it('should return 400 when document is already signed', async () => {
+      const mockServiceInstance = {
+        signDocument: jest.fn().mockRejectedValue(new Error('Document is already signed')),
+      }
+
+      mockRequest = {
+        params: { id: 'doc-123' },
+        user: { id: 'user-123', email: 'test@example.com' },
+        body: {
+          password: 'password123',
+          fullName: 'John Doe',
+          identificationNumber: '123456789',
+        },
+        ip: '192.168.1.1',
+        connection: { remoteAddress: '192.168.1.1' } as any,
+        get: jest.fn().mockReturnValue('Test Agent'),
+        documentService: mockServiceInstance as any,
+      } as any
+
+      await controller.signDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400)
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Document is already signed' })
+    })
+
+    it('should return 401 when authentication fails', async () => {
+      const mockServiceInstance = {
+        signDocument: jest.fn().mockRejectedValue(new Error('Authentication failed')),
+      }
+
+      mockRequest = {
+        params: { id: 'doc-123' },
+        user: { id: 'user-123', email: 'test@example.com' },
+        body: {
+          password: 'wrongpassword',
+          fullName: 'John Doe',
+          identificationNumber: '123456789',
+        },
+        ip: '192.168.1.1',
+        connection: { remoteAddress: '192.168.1.1' } as any,
+        get: jest.fn().mockReturnValue('Test Agent'),
+        documentService: mockServiceInstance as any,
+      } as any
+
+      await controller.signDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401)
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Authentication failed' })
+    })
+
+    it('should handle generic errors with 500 status', async () => {
+      const mockServiceInstance = {
+        signDocument: jest.fn().mockRejectedValue(new Error('Unexpected error')),
+      }
+
+      mockRequest = {
+        params: { id: 'doc-123' },
+        user: { id: 'user-123', email: 'test@example.com' },
+        body: {
+          password: 'password123',
+          fullName: 'John Doe',
+          identificationNumber: '123456789',
+        },
+        ip: '192.168.1.1',
+        connection: { remoteAddress: '192.168.1.1' } as any,
+        get: jest.fn().mockReturnValue('Test Agent'),
+        documentService: mockServiceInstance as any,
+      } as any
+
+      await controller.signDocument(mockRequest as Request, mockResponse as Response)
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500)
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Unexpected error' })
+    })
   })
 })
