@@ -1,4 +1,4 @@
-import { DocumentRepository } from '../repositories/DocumentRepository'
+import { DocumentUserRepository } from '../repositories/DocumentUserRepository'
 import { DocumentAdminRepository } from '../repositories/DocumentAdminRepository'
 import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse } from '../types'
 import { GCSUtil } from '../utils/gcs'
@@ -11,16 +11,20 @@ import { v4 as uuidv4 } from 'uuid'
 export class DocumentService {
   constructor(private userToken: string) {}
 
-  private get documentRepository(): DocumentRepository {
-    return new DocumentRepository(this.userToken)
+  private get documentUserRepository(): DocumentUserRepository {
+    return new DocumentUserRepository(this.userToken)
+  }
+
+  private get documentAdminRepository(): DocumentAdminRepository {
+    return new DocumentAdminRepository()
   }
 
   async listUserDocuments(userId: string): Promise<Document[]> {
-    return await this.documentRepository.getDocumentsByUser(userId)
+    return await this.documentUserRepository.listDocumentsByUser(userId)
   }
 
   async getUserDocument(documentId: string, userId: string): Promise<Document | null> {
-    return await this.documentRepository.getDocumentById(documentId, userId)
+    return await this.documentUserRepository.getDocumentById(documentId, userId)
   }
 
   async signDocument(
@@ -31,8 +35,8 @@ export class DocumentService {
     userAgent: string,
     userEmail: string
   ): Promise<void> {
-    // 1. Get document and validate ownership and status
-    const document = await this.documentRepository.getDocumentById(documentId, userId)
+    // 1. Get document and validate ownership and status using user repository (RLS-enforced)
+    const document = await this.documentUserRepository.getDocumentById(documentId, userId)
     if (!document) {
       throw new Error('Document not found')
     }
@@ -48,11 +52,6 @@ export class DocumentService {
     if (authError || !authData.user) {
       throw new Error('Authentication failed')
     }
-
-    // TODO: Phase III - Get user profile and validate fullName and identificationNumber against database
-    // TODO: Phase III - Implement audit logging for all signature operations
-    // TODO: Phase III - Add document download/streaming endpoints
-    // TODO: Phase III - Implement document status change notifications
 
     // 3. Download original PDF from GCS
     const originalPdfBuffer = await GCSUtil.downloadPdf(document.pdf_original_path)
@@ -87,11 +86,11 @@ export class DocumentService {
       signedPathUploaded = signedPath
       console.log(`[DocumentService] signDocument: Uploaded signed PDF to ${signedPath}`)
 
-      // 9. Insert signature record
+      // 9. Insert signature record using admin repository (RLS-bypassed)
       const signedAt = new Date().toISOString()
 
       console.log(`[DocumentService] signDocument: Inserting signature record for document ${documentId} by user ${userId}`)
-      await this.documentRepository.insertSignature({
+      await this.documentAdminRepository.insertSignature({
         document_id: documentId,
         name: request.fullName,
         identification_number: request.identificationNumber,
@@ -101,11 +100,13 @@ export class DocumentService {
         signed_at: signedAt
       })
 
-      // 10. Update document as signed
-      await this.documentRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
+      // 10. Update document as signed using admin repository (RLS-bypassed)
+      await this.documentAdminRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
       console.log(`[DocumentService] signDocument: Document ${documentId} signed successfully`)
     } catch (error) {
       // Rollback: delete signed PDF from GCS if it was uploaded
+      // Note: DB operations use admin repository so they should succeed if we reach this point,
+      // but we still keep the rollback for GCS operations
       if (signedPathUploaded) {
         try {
           await GCSUtil.deletePdf(signedPathUploaded)

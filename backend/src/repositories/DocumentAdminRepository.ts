@@ -1,6 +1,17 @@
 import { createSupabaseAdminClient } from '../config/supabase'
-import { Document } from '../types'
+import { Document, SignatureData } from '../types'
 
+/**
+ * DocumentAdminRepository - Admin-context repository for document operations.
+ * 
+ * Responsibilities:
+ * - Perform all INSERT/UPDATE operations related to:
+ *   - ar_signatures.signatures
+ *   - ar_signatures.documents
+ * - Use a Supabase client initialized with the service_role key
+ * - Assume RLS is bypassed
+ * - Not accept user JWTs
+ */
 export class DocumentAdminRepository {
   private get supabaseClient() {
     return createSupabaseAdminClient()
@@ -76,5 +87,48 @@ export class DocumentAdminRepository {
     } else {
       console.log(`[DocumentAdminRepository] supersedeOldDocuments: Marked old documents as superseded for user ${userId} in period ${payrollPeriodStart} to ${payrollPeriodEnd}`)
     }
+  }
+
+  /**
+   * Insert a signature record for a signed document.
+   * Uses service_role to bypass RLS.
+   * @param signatureData - The signature data to insert
+   */
+  async insertSignature(signatureData: SignatureData): Promise<void> {
+    const { error } = await this.supabaseClient
+      .schema('ar_signatures')
+      .from('signatures')
+      .insert(signatureData)
+
+    if (error) {
+      console.error('[DocumentAdminRepository] insertSignature: Failed to insert signature', { error: error.message, code: error.code, signatureData })
+      throw error
+    }
+    console.log(`[DocumentAdminRepository] insertSignature: Inserted signature for document ${signatureData.document_id}`)
+  }
+
+  /**
+   * Update a document as signed.
+   * Uses service_role to bypass RLS.
+   * @param documentId - The ID of the document to update
+   * @param signedHash - The hash of the signed PDF
+   * @param signedAt - The timestamp when the document was signed
+   */
+  async updateDocumentAsSigned(documentId: string, signedHash: string, signedAt: string): Promise<void> {
+    const { error } = await this.supabaseClient
+      .schema('ar_signatures')
+      .from('documents')
+      .update({
+        status: 'SIGNED',
+        signed_hash: signedHash,
+        signed_at: signedAt
+      })
+      .eq('id', documentId)
+
+    if (error) {
+      console.error('[DocumentAdminRepository] updateDocumentAsSigned: Failed to update document', { error: error.message, code: error.code, documentId })
+      throw error
+    }
+    console.log(`[DocumentAdminRepository] updateDocumentAsSigned: Updated document ${documentId} as signed`)
   }
 }

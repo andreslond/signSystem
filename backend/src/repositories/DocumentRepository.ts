@@ -1,4 +1,4 @@
-import { createSupabaseUserClient } from '../config/supabase'
+import { createSupabaseUserClient, createSupabaseAdminClient } from '../config/supabase'
 import { Document, SignatureData } from '../types'
 import Logger from '../utils/logger'
 
@@ -8,6 +8,10 @@ export class DocumentRepository {
 
   private get supabaseClient() {
     return createSupabaseUserClient(this.userToken)
+  }
+
+  private get supabaseAdminClient() {
+    return createSupabaseAdminClient()
   }
 
   async getDocumentsByUser(userId: string): Promise<Document[]> {
@@ -43,7 +47,7 @@ export class DocumentRepository {
   }
 
   async insertSignature(signatureData: SignatureData): Promise<void> {
-    const { error } = await this.supabaseClient
+    const { error } = await this.supabaseAdminClient
       .schema('ar_signatures')
       .from('signatures')
       .insert(signatureData)
@@ -55,7 +59,7 @@ export class DocumentRepository {
   }
 
   async updateDocumentAsSigned(documentId: string, signedHash: string, signedAt: string): Promise<void> {
-    const { error } = await this.supabaseClient
+    const { error } = await this.supabaseAdminClient
       .schema('ar_signatures')
       .from('documents')
       .update({
