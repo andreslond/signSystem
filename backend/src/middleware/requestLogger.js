@@ -1,4 +1,4 @@
-const Logger = require('../utils/logger');
+const Logger = require('../utils/logger').default;
 
 const requestLogger = (req, res, next) => {
   // Log the incoming request

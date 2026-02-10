@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "SignSystem API - Phase II",
-    "description": "Complete API collection for SignSystem Phase II with document listing, retrieval, and electronic signature functionality. Includes test cases for success and error scenarios.",
+    "name": "SignSystem API - Complete",
+    "description": "Complete API collection for SignSystem with document upload (server-to-server), listing, retrieval, and electronic signature functionality. Includes test cases for success and error scenarios.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -117,6 +117,390 @@
           ],
           "query": [],
           "variable": []
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Valid Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer 8f7c3a6d9d4a9e1b5c8d2a3f7e9b0c4d1a6f8e9c2b7d4a5f6c8b9e0d1",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Upload a new payroll PDF document. Should return 201 with document_id, status, and payroll_period.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": [],
+              "disabled": false
+            },
+            {
+              "key": "user_id",
+              "value": "ff75c89d-98ae-4bb0-9f47-ba3054e777ea",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "1",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Idempotent (Same Document)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer 8f7c3a6d9d4a9e1b5c8d2a3f7e9b0c4d1a6f8e9c2b7d4a5f6c8b9e0d1",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Upload the same PDF again. Should return existing document with idempotent=true.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": [],
+              "disabled": false
+            },
+            {
+              "key": "user_id",
+              "value": "ff75c89d-98ae-4bb0-9f47-ba3054e777ea",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "1",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Invalid Internal Auth",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_key",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt upload with invalid internal API key. Should return 401.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": [],
+              "disabled": false
+            },
+            {
+              "key": "user_id",
+              "value": "ff75c89d-98ae-4bb0-9f47-ba3054e777ea",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "1",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Missing PDF",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer 8f7c3a6d9d4a9e1b5c8d2a3f7e9b0c4d1a6f8e9c2b7d4a5f6c8b9e0d1",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt upload without PDF file. Should return 400.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "user_id",
+              "value": "ff75c89d-98ae-4bb0-9f47-ba3054e777ea",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "1",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Invalid User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer 8f7c3a6d9d4a9e1b5c8d2a3f7e9b0c4d1a6f8e9c2b7d4a5f6c8b9e0d1",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt upload with non-existent user_id. Should return 404.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": [],
+              "disabled": false
+            },
+            {
+              "key": "user_id",
+              "value": "00000000-0000-0000-0000-000000000000",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "1",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload Document - Employee Mismatch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer 8f7c3a6d9d4a9e1b5c8d2a3f7e9b0c4d1a6f8e9c2b7d4a5f6c8b9e0d1",
+            "disabled": false,
+            "type": "default"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Attempt upload with employee_id that doesn't match the user's profile. Should return 400.",
+        "url": {
+          "raw": "{{base_url}}/documents",
+          "protocol": "",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": [],
+              "disabled": false
+            },
+            {
+              "key": "user_id",
+              "value": "ff75c89d-98ae-4bb0-9f47-ba3054e777ea",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "employee_id",
+              "value": "999",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_start",
+              "value": "01-01-2025",
+              "type": "default",
+              "disabled": false
+            },
+            {
+              "key": "payroll_period_end",
+              "value": "31-01-2025",
+              "type": "default",
+              "disabled": false
+            }
+          ]
         }
       }
     },

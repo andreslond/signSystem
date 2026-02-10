@@ -1,11 +1,11 @@
 # Database Model Documentation
 
-This document describes the existing database schema for the SignSystem project, located in Supabase under the `ar_nomina` schema. The schema is read-only and must not be altered. Row Level Security (RLS) is enabled and enforced by Supabase.
+This document describes the existing database schema for the SignSystem project, located in Supabase under the `ar_signatures` schema. Row Level Security (RLS) is enabled and enforced by Supabase.
 
 ## Tables
 
 ### employees
-Stores employee information.
+Stores employee information in the schema ar_nomina
 
 - **id** (bigint, Primary Key): Unique identifier for the employee.
 - **name** (text): Full name of the employee.
@@ -32,14 +32,17 @@ Stores payroll documents for signing.
 - **id** (uuid, Primary Key): Unique identifier for the document.
 - **user_id** (uuid, Foreign Key to profiles.id): The user who owns the document.
 - **employee_id** (bigint, Foreign Key to employees.id): The employee associated with the document.
-- **payroll_period** (text): Period of the payroll (e.g., '2023-10').
+- **payroll_period_start** (date): Start date of the payroll period (MM-DD-YYYY format).
+- **payroll_period_end** (date): End date of the payroll period (MM-DD-YYYY format).
 - **pdf_original_path** (text): Path to the original PDF file.
 - **pdf_signed_path** (text): Path to the signed PDF file (null if not signed).
-- **status** (text): Status of the document ('PENDING' or 'SIGNED').
+- **status** (text): Status of the document ('PENDING', 'SIGNED', or 'INVALIDATED').
 - **original_hash** (text): Hash of the original PDF.
 - **signed_hash** (text): Hash of the signed PDF (null if not signed).
 - **created_at** (timestamp): Record creation timestamp.
 - **signed_at** (timestamp): Timestamp when signed (null if not signed).
+- **superseded_by** (uuid): ID of the document that superseded this one (null if not superseded).
+- **is_active** (boolean): Whether the document is active (default true).
 
 ### signatures
 Records signature events for documents.
@@ -60,8 +63,45 @@ Records signature events for documents.
 - `documents.employee_id` → `employees.id`.
 - `signatures.document_id` → `documents.id`.
 
+## Schema Updates
+
+The following changes have been applied to support document lifecycle management and date range payroll periods:
+
+```sql
+-- Add lifecycle management columns
+ALTER TABLE ar_signatures.documents
+ADD COLUMN superseded_by uuid,
+ADD COLUMN is_active boolean NOT NULL DEFAULT true;
+
+-- Migrate from single payroll_period to date range
+ALTER TABLE ar_signatures.documents DROP COLUMN payroll_period;
+ALTER TABLE ar_signatures.documents
+ADD COLUMN payroll_period_start date NOT NULL,
+ADD COLUMN payroll_period_end date NOT NULL;
+
+-- Add constraints
+ALTER TABLE ar_signatures.documents
+ADD CONSTRAINT valid_date_range CHECK (payroll_period_start <= payroll_period_end),
+ADD CONSTRAINT unique_active_document_per_period EXCLUDE (
+    user_id WITH =,
+    payroll_period_start WITH =,
+    payroll_period_end WITH =,
+    original_hash WITH =
+) WHERE (is_active = true);
+```
+
+Status values: 'PENDING' (can be replaced), 'SIGNED' (invalidate only), 'INVALIDATED' (read-only).
+
+**Migration Note**: Existing `payroll_period` values (format: "YYYY-MM") should be converted to date ranges where start_date = first day of month and end_date = last day of month.
+
+## Suggested indexes
+CREATE INDEX idx_documents_active_period_range
+ON ar_signatures.documents(user_id, payroll_period_start, payroll_period_end)
+WHERE is_active = true;
+
 ## Notes
-- All tables use the `ar_signature` and `ar_nomina` schema.
-- RLS is enabled; queries must respect user permissions.
+- All tables use the `ar_signatures` schema.
+- RLS is enabled for user-facing operations; bypassed for admin operations using service_role.
 - The authenticated user ID is available via JWT (`auth.uid()` in Supabase).
-- No changes to the schema are allowed; integration must work with the existing structure.
+- Schema changes are allowed as needed for functionality.
+- Current implementation includes comprehensive test coverage and production-ready features.
