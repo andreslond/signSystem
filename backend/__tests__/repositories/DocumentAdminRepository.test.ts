@@ -1,7 +1,6 @@
 import { PostgrestError } from '@supabase/supabase-js'
 import { DocumentAdminRepository } from '../../src/repositories/DocumentAdminRepository'
 import { Document, SignatureData } from '../../src/types'
-import { it } from 'node:test'
 
 // Mock Supabase
 jest.mock('../../src/config/supabase', () => ({
