@@ -1,0 +1,79 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SegmentedControl Component > matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="light"
+  >
+    <div
+      class="bg-background text-text-primary min-h-screen"
+    >
+      <div
+        class="bg-border dark:bg-surface-alt p-1 rounded-2xl flex w-full transition-colors"
+      >
+        <button
+          class="
+                            flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-sm font-semibold transition-all duration-200
+                            bg-background dark:bg-surface text-text-primary shadow-card
+                        "
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search text-primary"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          Option 1
+        </button>
+        <button
+          class="
+                            flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-sm font-semibold transition-all duration-200
+                            text-text-secondary hover:text-text-primary
+                        "
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-history text-text-secondary"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+            />
+            <path
+              d="M3 3v5h5"
+            />
+            <path
+              d="M12 7v5l4 2"
+            />
+          </svg>
+          Option 2
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

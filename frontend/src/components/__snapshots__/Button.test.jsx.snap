@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button Component > matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="light"
+  >
+    <div
+      class="bg-background text-text-primary min-h-screen"
+    >
+      <button
+        class="flex items-center justify-center gap-2 px-6 py-3.5 font-semibold transition-all duration-200 text-base disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-white rounded-xl shadow-lg shadow-primary/20 enabled:hover:translate-y-[-1px] cursor-pointer "
+        type="button"
+      >
+        <span>
+          Snapshot
+        </span>
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
