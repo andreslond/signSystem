@@ -83,14 +83,14 @@ describe('DocumentService', () => {
       }
 
       const mockRepoInstance = {
-        getDocumentById: jest.fn().mockResolvedValue(mockDocument),
+        getDocumentByIdWithEmployee: jest.fn().mockResolvedValue(mockDocument),
       } as any
 
       mockDocumentUserRepository.mockImplementation(() => mockRepoInstance)
 
       const result = await service.getUserDocument('doc-123', 'user-123')
 
-      expect(mockRepoInstance.getDocumentById).toHaveBeenCalledWith('doc-123', 'user-123')
+      expect(mockRepoInstance.getDocumentByIdWithEmployee).toHaveBeenCalledWith('doc-123', 'user-123')
       expect(result).toEqual(mockDocument)
     })
   })
