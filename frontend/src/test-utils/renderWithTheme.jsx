@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { AuthProvider } from '../context/AuthContext';
 
 /**
  * Custom render helper that wraps components in theme-specific containers.
@@ -11,9 +12,11 @@ export const renderWithTheme = (ui, { theme = 'light', ...renderOptions } = {}) 
     const Wrapper = ({ children }) => (
         <div className={theme}>
             <div className="bg-background text-text-primary min-h-screen">
-                <MemoryRouter>
-                    {children}
-                </MemoryRouter>
+                <AuthProvider>
+                    <MemoryRouter>
+                        {children}
+                    </MemoryRouter>
+                </AuthProvider>
             </div>
         </div>
     );

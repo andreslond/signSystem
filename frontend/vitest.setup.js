@@ -16,3 +16,16 @@ Object.defineProperty(window, 'matchMedia', {
         dispatchEvent: vi.fn(),
     })),
 });
+// Mock Supabase
+vi.mock('./src/lib/supabase', () => ({
+    supabase: {
+        auth: {
+            getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+            onAuthStateChange: vi.fn(() => ({
+                data: { subscription: { unsubscribe: vi.fn() } },
+            })),
+            signInWithPassword: vi.fn(),
+            signOut: vi.fn(),
+        },
+    },
+}));

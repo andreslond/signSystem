@@ -3,8 +3,23 @@ import { describe, it, expect } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../test-utils/renderWithTheme';
 import Login from './Login';
+import { useAuth } from '../context/AuthContext';
+
+vi.mock('../context/AuthContext', async () => {
+    const actual = await vi.importActual('../context/AuthContext');
+    return {
+        ...actual,
+        useAuth: vi.fn(),
+    };
+});
 
 describe('Login Page', () => {
+    beforeEach(() => {
+        useAuth.mockReturnValue({
+            session: null,
+            loading: false,
+        });
+    });
     it('renders correctly with structural elements', () => {
         renderWithTheme(<Login />);
 
