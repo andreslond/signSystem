@@ -1,19 +1,131 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Users, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Users, ArrowRight, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { supabase } from '../lib/supabase';
+import { mapAuthError, logAppError } from '../utils/errorHandlers';
+import { useAuth } from '../context/AuthContext';
+import { createErrorFromUnknown } from '../utils/errors';
+
+/**
+ * Email validation regex following best practices.
+ */
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+/**
+ * Password minimum requirements.
+ */
+const PASSWORD_MIN_LENGTH = 6;
+
+/**
+ * Validates login input before submission.
+ * @param {string} email
+ * @param {string} password
+ * @returns {{ valid: boolean, errors: object }}
+ */
+const validateLoginInput = (email, password) => {
+    const errors = {};
+
+    // Email validation
+    if (!email) {
+        errors.email = 'El correo electrónico es obligatorio.';
+    } else if (!EMAIL_REGEX.test(email)) {
+        errors.email = 'Por favor, ingresa un correo electrónico válido.';
+    }
+
+    // Password validation
+    if (!password) {
+        errors.password = 'La contraseña es obligatoria.';
+    } else if (password.length < PASSWORD_MIN_LENGTH) {
+        errors.password = `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+    }
+
+    return {
+        valid: Object.keys(errors).length === 0,
+        errors,
+    };
+};
+
+/**
+ * Checks if an error is retryable (network-related).
+ */
+const isRetryableError = (error) => {
+    if (!error) return false;
+    const message = error.message?.toLowerCase() || '';
+    return message.includes('network') ||
+           message.includes('fetch') ||
+           message.includes('timeout') ||
+           error.statusCode === 0;
+};
 
 export default function Login() {
     const navigate = useNavigate();
+    const { session, loading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
 
-    const handleLogin = (e) => {
+    // Redirect if already logged in
+    useEffect(() => {
+        if (session && !authLoading) {
+            navigate('/documents/pending');
+        }
+    }, [session, authLoading, navigate]);
+
+    /**
+     * Handle login with validation and retry logic.
+     */
+    const handleLogin = async (e) => {
         e.preventDefault();
-        navigate('/documents/pending');
+        setLoading(true);
+        setError(null);
+        setFieldErrors({});
+
+        // Step 1: Validate input (fail fast)
+        const validation = validateLoginInput(email, password);
+
+        if (!validation.valid) {
+            setFieldErrors(validation.errors);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // Step 2: Attempt login
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (authError) {
+                throw authError;
+            }
+
+            // Login successful - redirect will be handled by useEffect or onAuthStateChange
+        } catch (err) {
+            // Handle structured error
+            const structuredError = createErrorFromUnknown(err);
+            logAppError('Login:handleLogin', structuredError);
+
+            // Set user-friendly error message
+            const friendlyMessage = mapAuthError(err);
+            setError(friendlyMessage);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Users className="animate-pulse text-primary" size={48} />
+            </div>
+        );
+    }
 
     return (
         <div className="relative min-h-screen flex flex-col items-center">
@@ -52,13 +164,26 @@ export default function Login() {
                         Inicia sesión para gestionar tu información.
                     </p>
 
+                    {error && (
+                        <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-3 text-primary text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
                     <form onSubmit={handleLogin} className="space-y-6">
                         <Input
                             label="Correo electrónico"
                             type="email"
                             placeholder="nombre@crewops.com"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                if (fieldErrors.email) {
+                                    setFieldErrors(prev => ({ ...prev, email: null }));
+                                }
+                            }}
+                            error={fieldErrors.email}
                             icon={Mail}
                             required
                         />
@@ -69,7 +194,13 @@ export default function Login() {
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    if (fieldErrors.password) {
+                                        setFieldErrors(prev => ({ ...prev, password: null }));
+                                    }
+                                }}
+                                error={fieldErrors.password}
                                 icon={Lock}
                                 rightIcon={showPassword ? EyeOff : Eye}
                                 onClickRightIcon={() => setShowPassword(!showPassword)}
@@ -87,6 +218,7 @@ export default function Login() {
                                 type="submit"
                                 className="w-full"
                                 icon={ArrowRight}
+                                loading={loading}
                             >
                                 Ingresar
                             </Button>

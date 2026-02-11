@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Home, Briefcase, User, Settings, Menu, X, Sun, Moon, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function AppLayout({ children, title }) {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -142,7 +144,10 @@ export default function AppLayout({ children, title }) {
                     </button>
 
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={async () => {
+                            await signOut();
+                            navigate('/');
+                        }}
                         className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors text-primary font-bold"
                     >
                         <LogOut size={22} />
