@@ -1,5 +1,6 @@
 export default function Input({
     label,
+    id,
     type = 'text',
     placeholder,
     value,
@@ -11,10 +12,15 @@ export default function Input({
     className = '',
     ...props
 }) {
+    const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+
     return (
         <div className="w-full">
             {label && (
-                <label className="block text-sm text-text-secondary mb-1.5 ml-1">
+                <label
+                    htmlFor={inputId}
+                    className="block text-sm text-text-secondary mb-1.5 ml-1"
+                >
                     {label}
                 </label>
             )}
@@ -25,23 +31,25 @@ export default function Input({
                     </div>
                 )}
                 <input
+                    id={inputId}
                     type={type}
                     placeholder={placeholder}
                     value={value}
                     onChange={onChange}
                     className={`
             w-full ${Icon ? 'pl-10' : 'px-3'} ${RightIcon ? 'pr-10' : 'px-3'} py-3 
-            bg-[#f9fafb] dark:bg-surface-alt border rounded-xl
+            bg-surface-alt border rounded-xl
             text-text-primary placeholder:text-text-muted
             focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
             transition-all duration-200
-            ${error ? 'border-red-500' : 'border-border dark:border-border-light'}
+            ${error ? 'border-primary' : 'border-border dark:border-border-light'}
             ${className}
           `}
                     {...props}
                 />
                 {RightIcon && (
                     <div
+                        data-testid="input-right-icon"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted cursor-pointer hover:text-text-secondary transition-colors"
                         onClick={onClickRightIcon}
                     >
@@ -50,7 +58,7 @@ export default function Input({
                 )}
             </div>
             {error && (
-                <p className="mt-1 text-sm text-red-500 ml-1">{error}</p>
+                <p className="mt-1 text-sm text-primary ml-1">{error}</p>
             )}
         </div>
     );

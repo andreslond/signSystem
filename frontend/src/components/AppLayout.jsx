@@ -37,10 +37,11 @@ export default function AppLayout({ children, title }) {
     return (
         <div className="min-h-screen bg-background text-text-primary flex flex-col transition-colors duration-300">
             {/* Top Bar */}
-            <header className="bg-white dark:bg-surface px-6 py-5 flex items-center justify-between shadow-sm sticky top-0 z-50 transition-colors duration-300">
+            <header className="bg-surface dark:bg-surface px-6 py-5 flex items-center justify-between shadow-sm sticky top-0 z-50 transition-colors duration-300">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={toggleMenu}
+                        aria-label="Toggle menu"
                         className="text-text-primary p-1 hover:bg-surface dark:hover:bg-surface-alt rounded-lg transition-colors"
                     >
                         <Menu size={24} strokeWidth={2} />
@@ -49,9 +50,12 @@ export default function AppLayout({ children, title }) {
                         {title}
                     </h1>
                 </div>
-                <button className="text-text-primary p-1 relative hover:bg-surface dark:hover:bg-surface-alt rounded-lg transition-colors">
+                <button
+                    aria-label="Notifications"
+                    className="text-text-primary p-1 relative hover:bg-surface dark:hover:bg-surface-alt rounded-lg transition-colors"
+                >
                     <Bell size={24} strokeWidth={2} />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border-2 border-white dark:border-surface"></span>
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border-2 border-background dark:border-surface"></span>
                 </button>
             </header>
 
@@ -71,7 +75,7 @@ export default function AppLayout({ children, title }) {
             {/* Menu Drawer */}
             <aside
                 className={`
-                    fixed top-0 left-0 bottom-0 z-[101] w-[280px] bg-white dark:bg-surface shadow-2xl 
+                    fixed top-0 left-0 bottom-0 z-[101] w-[280px] bg-surface dark:bg-surface shadow-2xl 
                     transform transition-transform duration-300 ease-out flex flex-col
                     ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
@@ -86,6 +90,7 @@ export default function AppLayout({ children, title }) {
                     </div>
                     <button
                         onClick={toggleMenu}
+                        aria-label="Close menu"
                         className="p-1 hover:bg-surface dark:hover:bg-surface-alt rounded-full transition-colors"
                     >
                         <X size={24} />
@@ -124,8 +129,8 @@ export default function AppLayout({ children, title }) {
                             {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
                             <span className="text-base font-medium">Modo {isDarkMode ? 'Claro' : 'Oscuro'}</span>
                         </div>
-                        <div className={`w-10 h-5 rounded-full relative transition-colors ${isDarkMode ? 'bg-primary' : 'bg-gray-300'}`}>
-                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${isDarkMode ? 'right-1' : 'left-1'}`} />
+                        <div className={`w-10 h-5 rounded-full relative transition-colors ${isDarkMode ? 'bg-primary' : 'bg-border'}`}>
+                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-background transition-all ${isDarkMode ? 'right-1' : 'left-1'}`} />
                         </div>
                     </button>
 
@@ -138,7 +143,7 @@ export default function AppLayout({ children, title }) {
 
                     <button
                         onClick={() => navigate('/')}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-500 font-bold"
+                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors text-primary font-bold"
                     >
                         <LogOut size={22} />
                         <span className="text-base">Cerrar Sesión</span>

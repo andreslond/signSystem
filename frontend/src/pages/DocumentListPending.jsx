@@ -51,7 +51,7 @@ export default function DocumentListPending() {
                         placeholder="Buscar cuenta o fecha..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-surface-alt rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-sm border border-transparent dark:border-border-light focus:border-primary/20 focus:outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-surface dark:bg-surface-alt rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-sm border border-transparent dark:border-border-light focus:border-primary/20 focus:outline-none transition-all"
                     />
                 </div>
 
@@ -76,12 +76,12 @@ export default function DocumentListPending() {
                 </div>
 
                 {/* Info Footer */}
-                <div className="mt-4 bg-[#fef9c3]/30 dark:bg-[#854d0e]/10 border border-[#fef9c3] dark:border-[#854d0e]/30 p-4 rounded-2xl relative overflow-hidden transition-colors">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fbbf24]" />
-                    <p className="text-[14px] font-bold text-[#854d0e] dark:text-[#fbbf24] mb-1 transition-colors">
+                <div className="mt-4 bg-warning/10 dark:bg-warning/10 border border-warning/20 dark:border-warning/30 p-4 rounded-2xl relative overflow-hidden transition-colors">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-warning" />
+                    <p className="text-[14px] font-bold text-warning mb-1 transition-colors">
                         ¿Dudas con tu pago?
                     </p>
-                    <p className="text-[13px] text-[#a16207] dark:text-[#fbbf24]/80 leading-relaxed transition-colors">
+                    <p className="text-[13px] text-warning/80 leading-relaxed transition-colors">
                         Si el monto no coincide, repórtalo inmediatamente al administrador.
                     </p>
                 </div>

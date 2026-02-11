@@ -1,0 +1,321 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login Page > matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="light"
+  >
+    <div
+      class="bg-background text-text-primary min-h-screen"
+    >
+      <div
+        class="relative min-h-screen flex flex-col items-center"
+      >
+        <div
+          class="absolute inset-0 z-0 bg-cover bg-center"
+          style="background-image: url("https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2069"); filter: brightness(0.5);"
+        />
+        <div
+          class="absolute inset-0 z-0 bg-gradient-to-b from-black/60 to-transparent h-1/2"
+        />
+        <div
+          class="relative z-10 w-full max-w-md px-6 flex flex-col items-center pt-20"
+        >
+          <div
+            class="flex flex-col items-center mb-12"
+          >
+            <div
+              class="flex items-center gap-3 mb-2"
+            >
+              <div
+                class="bg-primary p-2 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-users text-white"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                  />
+                  <path
+                    d="M16 3.128a4 4 0 0 1 0 7.744"
+                  />
+                  <path
+                    d="M22 21v-2a4 4 0 0 0-3-3.87"
+                  />
+                  <circle
+                    cx="9"
+                    cy="7"
+                    r="4"
+                  />
+                </svg>
+              </div>
+              <h1
+                class="text-3xl font-bold text-white tracking-tight"
+              >
+                CrewOps
+              </h1>
+            </div>
+            <p
+              class="text-white/80 text-sm font-medium"
+            >
+              Gestión integral de personal
+            </p>
+          </div>
+          <div
+            class="w-full bg-surface dark:bg-surface-alt rounded-[24px] shadow-2xl p-8 mb-8 transition-colors"
+          >
+            <h2
+              class="text-[26px] font-bold text-text-primary mb-1"
+            >
+              Bienvenido
+            </h2>
+            <p
+              class="text-text-secondary text-sm mb-8 leading-relaxed"
+            >
+              Inicia sesión para gestionar tu información.
+            </p>
+            <form
+              class="space-y-6"
+            >
+              <div
+                class="w-full"
+              >
+                <label
+                  class="block text-sm text-text-secondary mb-1.5 ml-1"
+                  for="input-correo-electrónico"
+                >
+                  Correo electrónico
+                </label>
+                <div
+                  class="relative"
+                >
+                  <div
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-mail"
+                      fill="none"
+                      height="20"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.5"
+                      viewBox="0 0 24 24"
+                      width="20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"
+                      />
+                      <rect
+                        height="16"
+                        rx="2"
+                        width="20"
+                        x="2"
+                        y="4"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    class="
+            w-full pl-10 px-3 py-3 
+            bg-surface-alt border rounded-xl
+            text-text-primary placeholder:text-text-muted
+            focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
+            transition-all duration-200
+            border-border dark:border-border-light
+            
+          "
+                    id="input-correo-electrónico"
+                    placeholder="nombre@crewops.com"
+                    required=""
+                    type="email"
+                    value=""
+                  />
+                </div>
+              </div>
+              <div
+                class="space-y-1"
+              >
+                <div
+                  class="w-full"
+                >
+                  <label
+                    class="block text-sm text-text-secondary mb-1.5 ml-1"
+                    for="input-contraseña"
+                  >
+                    Contraseña
+                  </label>
+                  <div
+                    class="relative"
+                  >
+                    <div
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-lock"
+                        fill="none"
+                        height="20"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <rect
+                          height="11"
+                          rx="2"
+                          ry="2"
+                          width="18"
+                          x="3"
+                          y="11"
+                        />
+                        <path
+                          d="M7 11V7a5 5 0 0 1 10 0v4"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      class="
+            w-full pl-10 pr-10 py-3 
+            bg-surface-alt border rounded-xl
+            text-text-primary placeholder:text-text-muted
+            focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
+            transition-all duration-200
+            border-border dark:border-border-light
+            
+          "
+                      id="input-contraseña"
+                      placeholder="••••••••"
+                      required=""
+                      type="password"
+                      value=""
+                    />
+                    <div
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted cursor-pointer hover:text-text-secondary transition-colors"
+                      data-testid="input-right-icon"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-eye"
+                        fill="none"
+                        height="20"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                        />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="3"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="flex justify-end"
+                >
+                  <a
+                    class="text-xs text-text-muted hover:text-primary transition-colors"
+                    href="#"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                </div>
+              </div>
+              <div
+                class="pt-4"
+              >
+                <button
+                  class="flex items-center justify-center gap-2 px-6 py-3.5 font-semibold transition-all duration-200 cursor-pointer text-base bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:translate-y-[-1px] w-full"
+                  type="submit"
+                >
+                  <span>
+                    Ingresar
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-arrow-right"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    viewBox="0 0 24 24"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5 12h14"
+                    />
+                    <path
+                      d="m12 5 7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
+          <div
+            class="flex flex-col items-center gap-4 mt-auto pb-10"
+          >
+            <div
+              class="w-8 h-[1px] bg-border/20 dark:bg-border-light/20"
+            />
+            <div
+              class="flex items-center gap-2 text-text-muted/60 text-xs transition-colors"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-shield-check text-text-muted/40"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+                />
+                <path
+                  d="m9 12 2 2 4-4"
+                />
+              </svg>
+              <span>
+                Acceso seguro a sus documentos
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

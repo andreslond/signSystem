@@ -44,7 +44,7 @@ export default function Login() {
                 </div>
 
                 {/* Login Card */}
-                <div className="w-full bg-white dark:bg-surface rounded-[24px] shadow-2xl p-8 mb-8 transition-colors">
+                <div className="w-full bg-surface dark:bg-surface-alt rounded-[24px] shadow-2xl p-8 mb-8 transition-colors">
                     <h2 className="text-[26px] font-bold text-text-primary mb-1">
                         Bienvenido
                     </h2>
