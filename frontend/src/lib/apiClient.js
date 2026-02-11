@@ -348,6 +348,21 @@ export async function getDocumentUrl(documentId) {
 }
 
 /**
+ * Fetch signed PDF URL for a document
+ * Returns a time-limited signed URL from GCS for viewing/downloading the PDF
+ * @param {string} documentId - Document ID
+ * @param {number} expiresInSeconds - URL expiration time in seconds (default: 3600, min: 60, max: 86400)
+ * @returns {Promise<Object>} Response with pdfUrl, expiresAt, and pdfType
+ */
+export async function fetchDocumentPdfUrl(documentId, expiresInSeconds = 3600) {
+  const params = {
+    expiresInSeconds: Math.max(60, Math.min(expiresInSeconds, 86400)),
+  };
+  
+  return get(`/documents/${documentId}/pdf-url`, params);
+}
+
+/**
  * Fetch documents with pagination and optional status filter
  * @param {Object} params - Query parameters
  * @param {string} params.status - Document status filter (PENDING, SIGNED, INVALIDATED)
@@ -383,6 +398,7 @@ export const apiClient = {
   getDocumentUrl,
   fetchDocuments,
   fetchDocumentById,
+  fetchDocumentPdfUrl,
   HttpMethod,
   ApiError,
   ApiResponseFormat,

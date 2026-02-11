@@ -5,10 +5,10 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
 import AppLayout from '../components/AppLayout';
-import PDFViewer, { PDFViewerSkeleton } from '../components/PDFViewer';
-import LoadingSpinner from '../components/LoadingSpinner';
+import PDFViewer from '../components/PDFViewer';
+import DocumentViewerSkeleton from '../components/DocumentViewerSkeleton';
 import { useDocument } from '../hooks/useDocuments';
-import { getDocumentUrl } from '../lib/apiClient';
+import { fetchDocumentPdfUrl } from '../lib/apiClient';
 
 export default function DocumentViewerPending() {
     const navigate = useNavigate();
@@ -26,7 +26,9 @@ export default function DocumentViewerPending() {
         if (doc?.id) {
             const fetchPdfUrl = async () => {
                 try {
-                    const url = await getDocumentUrl(doc.id);
+                    const response = await fetchDocumentPdfUrl(doc.id);
+                    // The response has data.url from the standardized API format
+                    const url = response?.data?.url || response?.url;
                     setPdfUrl(url);
                 } catch (err) {
                     console.error('Error fetching PDF URL:', err);
@@ -67,45 +69,7 @@ export default function DocumentViewerPending() {
 
     // Loading state
     if (loading) {
-        return (
-            <AppLayout title="Detalle del Documento">
-                <div className="px-6 py-6 flex flex-col gap-6">
-                    {/* Back Action */}
-                    <button
-                        onClick={() => navigate('/documents/pending')}
-                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
-                    >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[15px] font-bold">Volver</span>
-                    </button>
-
-                    {/* Loading skeleton */}
-                    <div className="bg-background dark:bg-surface rounded-[24px] shadow-card overflow-hidden border border-transparent dark:border-border transition-colors">
-                        <div className="px-6 py-6 border-b border-border-light dark:border-border-light">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="bg-warning/10 dark:bg-warning/20 p-2 rounded-lg">
-                                    <FileText size={20} className="text-warning-dark dark:text-warning" />
-                                </div>
-                                <span className="bg-warning/10 dark:bg-warning/20 text-warning-dark dark:text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider">
-                                    Pendiente
-                                </span>
-                            </div>
-                            <div className="h-8 bg-surface-alt dark:bg-surface-alt rounded animate-pulse mb-2" />
-                            <div className="h-5 w-32 bg-surface-alt dark:bg-surface-alt rounded animate-pulse" />
-                        </div>
-
-                        <div className="p-4">
-                            <PDFViewerSkeleton />
-                        </div>
-
-                        <div className="px-6 py-4 bg-surface-alt dark:bg-surface-alt">
-                            <div className="h-6 w-48 bg-surface dark:bg-surface rounded animate-pulse mb-4" />
-                            <div className="h-10 w-full bg-primary/50 rounded-xl animate-pulse" />
-                        </div>
-                    </div>
-                </div>
-            </AppLayout>
-        );
+        return <DocumentViewerSkeleton />;
     }
 
     // Error state
