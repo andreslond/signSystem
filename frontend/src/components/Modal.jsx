@@ -36,17 +36,17 @@ export default function Modal({
             {/* Modal Container */}
             <div
                 className={`
-                    relative bg-white w-full max-w-[440px] mx-auto transition-all duration-300 transform
+                    relative bg-surface dark:bg-surface w-full max-w-[440px] mx-auto transition-all duration-300 transform
                     ${isDrawer
-                        ? 'rounded-t-[32px] p-8 pb-10 shadow-2xl translate-y-0'
-                        : 'rounded-[24px] p-6 m-4 shadow-xl'}
+                        ? 'rounded-t-[32px] p-8 pb-10 shadow-card-hover translate-y-0'
+                        : 'rounded-[24px] p-6 m-4 shadow-card'}
                     ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
                     ${className}
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
                 {isDrawer && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[#e5e7eb] rounded-full" />
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full" />
                 )}
 
                 {title && (

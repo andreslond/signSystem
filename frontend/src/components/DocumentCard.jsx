@@ -14,11 +14,11 @@ export default function DocumentCard({
     const statusBadge = {
         signed: {
             label: 'Firmado',
-            classes: 'bg-[#f2f4f7] dark:bg-[#1e293b] text-[#475467] dark:text-[#94a3b8]'
+            classes: 'bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted'
         },
         pending: {
             label: 'Pendiente',
-            classes: 'bg-[#fffaeb] dark:bg-[#451a03]/30 text-[#b54708] dark:text-[#fbbf24]'
+            classes: 'bg-warning/10 dark:bg-warning/20 text-warning'
         }
     };
 
@@ -26,16 +26,16 @@ export default function DocumentCard({
         <div
             onClick={onClick}
             className={`
-                bg-white dark:bg-surface rounded-[20px] p-5
+                bg-background dark:bg-surface rounded-[20px] p-5
                 border border-transparent dark:border-border
-                shadow-sm hover:shadow-md
+                shadow-card hover:shadow-card-hover
                 transition-all duration-200
                 cursor-pointer flex items-center gap-4
                 ${className}
             `}
         >
             {/* Document Icon Box */}
-            <div className="bg-[#f9fafb] dark:bg-surface-alt p-3 rounded-2xl text-text-primary">
+            <div className="bg-surface-alt dark:bg-surface-alt p-3 rounded-2xl text-text-primary">
                 <Icon size={24} strokeWidth={1.5} />
             </div>
 

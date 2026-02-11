@@ -18,12 +18,12 @@ exports[`DocumentListPending Page > matches snapshot 1`] = `
           class="px-6 py-6 flex flex-col gap-6"
         >
           <div
-            class="bg-[#ebebeb] dark:bg-surface-alt p-1 rounded-2xl flex w-full transition-colors"
+            class="bg-border dark:bg-surface-alt p-1 rounded-2xl flex w-full transition-colors"
           >
             <button
               class="
                             flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-sm font-semibold transition-all duration-200
-                            bg-white dark:bg-surface text-text-primary shadow-sm
+                            bg-background dark:bg-surface text-text-primary shadow-card
                         "
             >
               <svg
@@ -131,16 +131,16 @@ exports[`DocumentListPending Page > matches snapshot 1`] = `
             >
               <div
                 class="
-                bg-white dark:bg-surface rounded-[20px] p-5
+                bg-background dark:bg-surface rounded-[20px] p-5
                 border border-transparent dark:border-border
-                shadow-sm hover:shadow-md
+                shadow-card hover:shadow-card-hover
                 transition-all duration-200
                 cursor-pointer flex items-center gap-4
                 
             "
               >
                 <div
-                  class="bg-[#f9fafb] dark:bg-surface-alt p-3 rounded-2xl text-text-primary"
+                  class="bg-surface-alt dark:bg-surface-alt p-3 rounded-2xl text-text-primary"
                 >
                   <svg
                     aria-hidden="true"
@@ -181,7 +181,7 @@ exports[`DocumentListPending Page > matches snapshot 1`] = `
                       Cuenta de cobro
                     </h3>
                     <span
-                      class="bg-[#fffaeb] dark:bg-[#451a03]/30 text-[#b54708] dark:text-[#fbbf24] px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
+                      class="bg-warning/10 dark:bg-warning/20 text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       Pendiente
                     </span>
@@ -225,16 +225,16 @@ exports[`DocumentListPending Page > matches snapshot 1`] = `
               </div>
               <div
                 class="
-                bg-white dark:bg-surface rounded-[20px] p-5
+                bg-background dark:bg-surface rounded-[20px] p-5
                 border border-transparent dark:border-border
-                shadow-sm hover:shadow-md
+                shadow-card hover:shadow-card-hover
                 transition-all duration-200
                 cursor-pointer flex items-center gap-4
                 
             "
               >
                 <div
-                  class="bg-[#f9fafb] dark:bg-surface-alt p-3 rounded-2xl text-text-primary"
+                  class="bg-surface-alt dark:bg-surface-alt p-3 rounded-2xl text-text-primary"
                 >
                   <svg
                     aria-hidden="true"
@@ -275,7 +275,7 @@ exports[`DocumentListPending Page > matches snapshot 1`] = `
                       Cuenta de cobro
                     </h3>
                     <span
-                      class="bg-[#fffaeb] dark:bg-[#451a03]/30 text-[#b54708] dark:text-[#fbbf24] px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
+                      class="bg-warning/10 dark:bg-warning/20 text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       Pendiente
                     </span>

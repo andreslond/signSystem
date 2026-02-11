@@ -57,20 +57,20 @@ export default function DocumentViewerPending() {
                         <ChevronLeft size={20} strokeWidth={2.5} />
                         <span className="text-[15px] font-bold">Volver</span>
                     </button>
-                    <button className="bg-white dark:bg-surface p-2.5 rounded-xl shadow-sm border border-transparent hover:border-border dark:hover:border-border-light transition-all">
+                    <button className="bg-surface dark:bg-surface p-2.5 rounded-xl shadow-card border border-transparent hover:border-border dark:hover:border-border-light transition-all">
                         <Share2 size={20} className="text-text-primary" />
                     </button>
                 </div>
 
                 {/* Main Content Card */}
-                <div className="bg-white dark:bg-surface rounded-[24px] shadow-sm overflow-hidden border border-transparent dark:border-border transition-colors">
+                <div className="bg-background dark:bg-surface rounded-[24px] shadow-card overflow-hidden border border-transparent dark:border-border transition-colors">
                     {/* Header Info */}
-                    <div className="px-6 py-6 border-b border-[#f5f5f5] dark:border-border-light">
+                    <div className="px-6 py-6 border-b border-border-light dark:border-border-light">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="bg-[#fff9eb] dark:bg-[#451a03]/30 p-2 rounded-lg transition-colors">
-                                <FileText size={20} className="text-[#b54708] dark:text-[#fbbf24]" />
+                            <div className="bg-warning/10 dark:bg-warning/20 p-2 rounded-lg transition-colors">
+                                <FileText size={20} className="text-warning-dark dark:text-warning" />
                             </div>
-                            <span className="bg-[#fffaeb] dark:bg-[#451a03]/30 text-[#b54708] dark:text-[#fbbf24] px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors">
+                            <span className="bg-warning/10 dark:bg-warning/20 text-warning-dark dark:text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors">
                                 Pendiente
                             </span>
                         </div>
@@ -84,8 +84,8 @@ export default function DocumentViewerPending() {
 
                     {/* Preview Placeholder */}
                     <div className="p-4">
-                        <div className="bg-[#f9fafb] dark:bg-surface-alt rounded-2xl aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-[#eaecf0] dark:border-border-light gap-4 transition-colors">
-                            <div className="bg-white dark:bg-surface p-4 rounded-full shadow-sm transition-colors">
+                        <div className="bg-surface-alt dark:bg-surface-alt rounded-2xl aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-border dark:border-border-light gap-4 transition-colors">
+                            <div className="bg-background dark:bg-surface p-4 rounded-full shadow-card transition-colors">
                                 <FileText size={40} strokeWidth={1} className="text-text-muted/40" />
                             </div>
                             <p className="text-[14px] font-medium text-text-muted transition-colors">
@@ -95,7 +95,7 @@ export default function DocumentViewerPending() {
                     </div>
 
                     {/* Metadata Section */}
-                    <div className="px-6 py-4 bg-[#fcfcfc] dark:bg-surface-alt flex flex-col gap-4 transition-colors">
+                    <div className="px-6 py-4 bg-surface-alt dark:bg-surface-alt flex flex-col gap-4 transition-colors">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-text-secondary transition-colors">
                                 <Calendar size={18} strokeWidth={2} />
@@ -154,8 +154,8 @@ export default function DocumentViewerPending() {
             >
                 <div className="flex flex-col gap-6">
                     <div className="flex flex-col items-center text-center gap-2">
-                        <div className="bg-[#fff9eb] dark:bg-[#451a03]/30 p-4 rounded-full mb-2 transition-colors">
-                            <ShieldAlert size={32} className="text-[#b54708] dark:text-[#fbbf24]" />
+                        <div className="bg-warning/10 dark:bg-warning/20 p-4 rounded-full mb-2 transition-colors">
+                            <ShieldAlert size={32} className="text-warning-dark dark:text-warning" />
                         </div>
                         <h2 className="text-[22px] font-bold text-text-primary leading-tight transition-colors">
                             Confirmar firma del documento
@@ -166,11 +166,11 @@ export default function DocumentViewerPending() {
                     </div>
 
                     <form onSubmit={handleConfirmSign} className="flex flex-col gap-6">
-                        <div className="bg-[#f9fafb] dark:bg-surface-alt p-4 rounded-2xl border border-[#eaecf0] dark:border-border-light flex items-start gap-3 transition-colors">
-                            <div className="text-[#667085] dark:text-[#94a3b8] mt-0.5 transition-colors">
+                        <div className="bg-surface-alt dark:bg-surface-alt p-4 rounded-2xl border border-border dark:border-border-light flex items-start gap-3 transition-colors">
+                            <div className="text-text-secondary dark:text-text-muted mt-0.5 transition-colors">
                                 <ShieldAlert size={18} />
                             </div>
-                            <p className="text-[12px] text-[#475467] dark:text-text-secondary leading-relaxed transition-colors">
+                            <p className="text-[12px] text-text-secondary dark:text-text-secondary leading-relaxed transition-colors">
                                 Ingresa tu contraseña para verificar tu identidad y completar el proceso de firma digital segura.
                             </p>
                         </div>

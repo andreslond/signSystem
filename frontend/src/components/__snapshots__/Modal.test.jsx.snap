@@ -1,0 +1,38 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Modal Component > matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="light"
+  >
+    <div
+      class="bg-background text-text-primary min-h-screen"
+    >
+      <div
+        class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+      >
+        <div
+          class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 opacity-100"
+        />
+        <div
+          class="
+                    relative bg-surface dark:bg-surface w-full max-w-[440px] mx-auto transition-all duration-300 transform
+                    rounded-[24px] p-6 m-4 shadow-card
+                    translate-y-0 opacity-100
+                    
+                "
+        >
+          <h2
+            class="text-xl font-bold text-text-primary mb-4"
+          >
+            Snapshot Modal
+          </h2>
+          <div>
+            Content
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

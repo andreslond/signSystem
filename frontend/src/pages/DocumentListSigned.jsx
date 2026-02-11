@@ -69,7 +69,7 @@ export default function DocumentListSigned() {
                         placeholder="Buscar cuenta o fecha..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-surface-alt rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-sm border border-transparent dark:border-border-light focus:border-primary/20 focus:outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-surface dark:bg-surface-alt rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-card border border-transparent dark:border-border-light focus:border-primary/20 focus:outline-none transition-all"
                     />
                 </div>
 
@@ -77,7 +77,7 @@ export default function DocumentListSigned() {
                 <div className="flex flex-col gap-8">
                     {Object.entries(documentsByMonth).map(([month, docs]) => (
                         <div key={month} className="flex flex-col gap-4">
-                            <h2 className="text-[13px] font-bold text-[#8c8c8c] uppercase tracking-wider px-1">
+                            <h2 className="text-[13px] font-bold text-text-muted uppercase tracking-wider px-1">
                                 {month}
                             </h2>
                             <div className="flex flex-col gap-4">
