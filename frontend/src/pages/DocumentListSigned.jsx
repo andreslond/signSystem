@@ -69,7 +69,7 @@ export default function DocumentListSigned() {
                         placeholder="Buscar cuenta o fecha..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-white rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-sm border border-transparent focus:border-primary/20 focus:outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-surface-alt rounded-2xl text-[15px] text-text-primary placeholder:text-text-muted/60 shadow-sm border border-transparent dark:border-border-light focus:border-primary/20 focus:outline-none transition-all"
                     />
                 </div>
 

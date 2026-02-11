@@ -31,11 +31,11 @@ export default function Input({
                     onChange={onChange}
                     className={`
             w-full ${Icon ? 'pl-10' : 'px-3'} ${RightIcon ? 'pr-10' : 'px-3'} py-3 
-            bg-[#f9fafb] border rounded-xl
+            bg-[#f9fafb] dark:bg-surface-alt border rounded-xl
             text-text-primary placeholder:text-text-muted
             focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
             transition-all duration-200
-            ${error ? 'border-red-500' : 'border-border'}
+            ${error ? 'border-red-500' : 'border-border dark:border-border-light'}
             ${className}
           `}
                     {...props}

@@ -44,7 +44,7 @@ export default function Login() {
                 </div>
 
                 {/* Login Card */}
-                <div className="w-full bg-white rounded-[24px] shadow-2xl p-8 mb-8">
+                <div className="w-full bg-white dark:bg-surface rounded-[24px] shadow-2xl p-8 mb-8 transition-colors">
                     <h2 className="text-[26px] font-bold text-text-primary mb-1">
                         Bienvenido
                     </h2>
@@ -96,8 +96,8 @@ export default function Login() {
 
                 {/* Security Footer */}
                 <div className="flex flex-col items-center gap-4 mt-auto pb-10">
-                    <div className="w-8 h-[1px] bg-border/20" />
-                    <div className="flex items-center gap-2 text-text-muted/60 text-xs">
+                    <div className="w-8 h-[1px] bg-border/20 dark:bg-border-light/20" />
+                    <div className="flex items-center gap-2 text-text-muted/60 text-xs transition-colors">
                         <ShieldCheck size={16} className="text-text-muted/40" />
                         <span>Acceso seguro a sus documentos</span>
                     </div>

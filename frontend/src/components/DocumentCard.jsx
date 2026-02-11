@@ -14,11 +14,11 @@ export default function DocumentCard({
     const statusBadge = {
         signed: {
             label: 'Firmado',
-            classes: 'bg-[#f2f4f7] text-[#475467]'
+            classes: 'bg-[#f2f4f7] dark:bg-[#1e293b] text-[#475467] dark:text-[#94a3b8]'
         },
         pending: {
             label: 'Pendiente',
-            classes: 'bg-[#fffaeb] text-[#b54708]'
+            classes: 'bg-[#fffaeb] dark:bg-[#451a03]/30 text-[#b54708] dark:text-[#fbbf24]'
         }
     };
 
@@ -26,8 +26,8 @@ export default function DocumentCard({
         <div
             onClick={onClick}
             className={`
-                bg-white rounded-[20px] p-5
-                border border-transparent
+                bg-white dark:bg-surface rounded-[20px] p-5
+                border border-transparent dark:border-border
                 shadow-sm hover:shadow-md
                 transition-all duration-200
                 cursor-pointer flex items-center gap-4
@@ -35,7 +35,7 @@ export default function DocumentCard({
             `}
         >
             {/* Document Icon Box */}
-            <div className="bg-[#f9fafb] p-3 rounded-2xl text-text-primary">
+            <div className="bg-[#f9fafb] dark:bg-surface-alt p-3 rounded-2xl text-text-primary">
                 <Icon size={24} strokeWidth={1.5} />
             </div>
 
@@ -45,17 +45,17 @@ export default function DocumentCard({
                         {title}
                     </h3>
                     {status && statusBadge[status] && (
-                        <span className={`${statusBadge[status].classes} px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider`}>
+                        <span className={`${statusBadge[status].classes} px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors`}>
                             {statusBadge[status].label}
                         </span>
                     )}
                 </div>
                 <div className="flex items-end justify-between">
-                    <p className="text-[13px] text-text-secondary font-medium">
+                    <p className="text-[13px] text-text-secondary font-medium transition-colors">
                         {subtitle}
                     </p>
                     {amount && (
-                        <p className="text-[15px] font-bold text-text-primary">
+                        <p className="text-[15px] font-bold text-text-primary transition-colors">
                             {amount}
                         </p>
                     )}

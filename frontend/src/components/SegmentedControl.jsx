@@ -5,7 +5,7 @@ export default function SegmentedControl({
     onChange
 }) {
     return (
-        <div className="bg-[#ebebeb] p-1 rounded-2xl flex w-full">
+        <div className="bg-[#ebebeb] dark:bg-surface-alt p-1 rounded-2xl flex w-full transition-colors">
             {options.map((option) => {
                 const isActive = value === option.id;
                 const Icon = option.icon;
@@ -17,7 +17,7 @@ export default function SegmentedControl({
                         className={`
                             flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-sm font-semibold transition-all duration-200
                             ${isActive
-                                ? 'bg-white text-text-primary shadow-sm'
+                                ? 'bg-white dark:bg-surface text-text-primary shadow-sm'
                                 : 'text-text-secondary hover:text-text-primary'}
                         `}
                     >
