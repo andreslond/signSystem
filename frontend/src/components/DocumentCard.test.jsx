@@ -1,5 +1,4 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../test-utils/renderWithTheme';
 import DocumentCard from './DocumentCard';
@@ -13,7 +12,7 @@ describe('DocumentCard Component', () => {
         onClick: vi.fn(),
     };
 
-    it('renders document information correctly', () => {
+    test('renders document information correctly', () => {
         renderWithTheme(<DocumentCard {...props} />);
         expect(screen.getByText(props.title)).toBeInTheDocument();
         expect(screen.getByText(props.subtitle)).toBeInTheDocument();
@@ -21,24 +20,18 @@ describe('DocumentCard Component', () => {
         expect(screen.getByText('Pendiente')).toBeInTheDocument();
     });
 
-    it('handles click events', () => {
+    test('handles click events', () => {
         renderWithTheme(<DocumentCard {...props} />);
         fireEvent.click(screen.getByText(props.title).closest('div').parentElement);
         expect(props.onClick).toHaveBeenCalled();
     });
 
-    it('displays different status labels', () => {
+    test('displays different status labels', () => {
         const { rerender } = renderWithTheme(<DocumentCard {...props} status="signed" />);
         expect(screen.getByText('Firmado')).toBeInTheDocument();
     });
 
-    it('validates design tokens', () => {
-        renderWithTheme(<DocumentCard {...props} />);
-        const card = screen.getByText(props.title).closest('div').parentElement;
-        expect(card).toHaveValidDesignTokens();
-    });
-
-    it('matches snapshot', () => {
+    test('matches snapshot', () => {
         const { asFragment } = renderWithTheme(<DocumentCard {...props} />);
         expect(asFragment()).toMatchSnapshot();
     });

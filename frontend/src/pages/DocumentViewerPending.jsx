@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert, ArrowDown } from 'lucide-react';
+import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert, ArrowDown, AlertCircle } from 'lucide-react';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
 import AppLayout from '../components/AppLayout';
+import PDFViewer, { PDFViewerSkeleton } from '../components/PDFViewer';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useDocument } from '../hooks/useDocuments';
+import { getDocumentUrl } from '../lib/apiClient';
 
 export default function DocumentViewerPending() {
     const navigate = useNavigate();
@@ -12,18 +16,34 @@ export default function DocumentViewerPending() {
     const [showModal, setShowModal] = useState(false);
     const [password, setPassword] = useState('');
     const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+    const [pdfUrl, setPdfUrl] = useState(null);
 
+    // Fetch document using useDocument hook
+    const { document: doc, loading, error, refetch } = useDocument(id);
+
+    // Fetch PDF URL when document is loaded
+    useEffect(() => {
+        if (doc?.id) {
+            const fetchPdfUrl = async () => {
+                try {
+                    const url = await getDocumentUrl(doc.id);
+                    setPdfUrl(url);
+                } catch (err) {
+                    console.error('Error fetching PDF URL:', err);
+                }
+            };
+            fetchPdfUrl();
+        }
+    }, [doc?.id]);
+
+    // Scroll indicator logic
     useEffect(() => {
         let lastScrollY = window.scrollY;
 
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-
-            // Hide indicator when user has scrolled down (any positive scroll)
-            // Show it again only if user scrolls back to top
             const shouldShow = currentScrollY < 100;
 
-            // Only update if changed to avoid unnecessary re-renders
             if (shouldShow !== showScrollIndicator) {
                 setShowScrollIndicator(shouldShow);
             }
@@ -45,6 +65,122 @@ export default function DocumentViewerPending() {
         navigate(`/documents/signed/${id}`);
     };
 
+    // Loading state
+    if (loading) {
+        return (
+            <AppLayout title="Detalle del Documento">
+                <div className="px-6 py-6 flex flex-col gap-6">
+                    {/* Back Action */}
+                    <button
+                        onClick={() => navigate('/documents/pending')}
+                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
+                    >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                        <span className="text-[15px] font-bold">Volver</span>
+                    </button>
+
+                    {/* Loading skeleton */}
+                    <div className="bg-background dark:bg-surface rounded-[24px] shadow-card overflow-hidden border border-transparent dark:border-border transition-colors">
+                        <div className="px-6 py-6 border-b border-border-light dark:border-border-light">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="bg-warning/10 dark:bg-warning/20 p-2 rounded-lg">
+                                    <FileText size={20} className="text-warning-dark dark:text-warning" />
+                                </div>
+                                <span className="bg-warning/10 dark:bg-warning/20 text-warning-dark dark:text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider">
+                                    Pendiente
+                                </span>
+                            </div>
+                            <div className="h-8 bg-surface-alt dark:bg-surface-alt rounded animate-pulse mb-2" />
+                            <div className="h-5 w-32 bg-surface-alt dark:bg-surface-alt rounded animate-pulse" />
+                        </div>
+
+                        <div className="p-4">
+                            <PDFViewerSkeleton />
+                        </div>
+
+                        <div className="px-6 py-4 bg-surface-alt dark:bg-surface-alt">
+                            <div className="h-6 w-48 bg-surface dark:bg-surface rounded animate-pulse mb-4" />
+                            <div className="h-10 w-full bg-primary/50 rounded-xl animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <AppLayout title="Detalle del Documento">
+                <div className="px-6 py-6 flex flex-col gap-6">
+                    {/* Back Action */}
+                    <button
+                        onClick={() => navigate('/documents/pending')}
+                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
+                    >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                        <span className="text-[15px] font-bold">Volver</span>
+                    </button>
+
+                    {/* Error message */}
+                    <div className="bg-error/10 dark:bg-error/20 border border-error/20 dark:border-error/30 p-6 rounded-2xl">
+                        <div className="flex items-center gap-3 mb-3">
+                            <AlertCircle size={24} className="text-error shrink-0" />
+                            <h3 className="text-lg font-bold text-error">
+                                Error al cargar el documento
+                            </h3>
+                        </div>
+                        <p className="text-sm text-error/80 mb-4">
+                            {error.message || 'No se pudo cargar el documento. Por favor, intenta de nuevo.'}
+                        </p>
+                        <Button onClick={refetch} variant="secondary">
+                            Reintentar
+                        </Button>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    // No document found
+    if (!doc) {
+        return (
+            <AppLayout title="Detalle del Documento">
+                <div className="px-6 py-6 flex flex-col gap-6">
+                    <button
+                        onClick={() => navigate('/documents/pending')}
+                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
+                    >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                        <span className="text-[15px] font-bold">Volver</span>
+                    </button>
+
+                    <div className="bg-surface-alt dark:bg-surface-alt p-8 rounded-2xl text-center">
+                        <FileText size={48} strokeWidth={1} className="text-text-muted/40 mx-auto mb-4" />
+                        <p className="text-text-secondary">Documento no encontrado</p>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    // Format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No disponible';
+        return new Date(dateString).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
+    // Format amount
+    const formatAmount = (amount) => {
+        if (!amount) return null;
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        return `${numAmount.toLocaleString()}`;
+    };
+
     return (
         <AppLayout title="Detalle del Documento">
             <div className="px-6 py-6 flex flex-col gap-6">
@@ -57,7 +193,18 @@ export default function DocumentViewerPending() {
                         <ChevronLeft size={20} strokeWidth={2.5} />
                         <span className="text-[15px] font-bold">Volver</span>
                     </button>
-                    <button className="bg-surface dark:bg-surface p-2.5 rounded-xl shadow-card border border-transparent hover:border-border dark:hover:border-border-light transition-all">
+                    <button 
+                        onClick={() => {
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: `Documento #${doc.employee_id || doc.id.slice(0, 8)}`,
+                                    text: 'Mira este documento',
+                                    url: window.location.href
+                                });
+                            }
+                        }}
+                        className="bg-surface dark:bg-surface p-2.5 rounded-xl shadow-card border border-transparent hover:border-border dark:hover:border-border-light transition-all"
+                    >
                         <Share2 size={20} className="text-text-primary" />
                     </button>
                 </div>
@@ -75,23 +222,31 @@ export default function DocumentViewerPending() {
                             </span>
                         </div>
                         <h2 className="text-[22px] font-bold text-text-primary mb-1 leading-tight transition-colors">
-                            Cuenta de cobro - Octubre 2023
+                            {doc.employee_name || `Documento #${doc.employee_id || doc.id.slice(0, 8)}`}
                         </h2>
                         <p className="text-[14px] text-text-secondary font-medium transition-colors">
-                            Periodo: 16 Oct-31 Oct 2023
+                            {doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'}: ${doc.employee_identification_number}` : ''}
+                            {doc.employee_email ? ` • ${doc.employee_email}` : ''}
                         </p>
                     </div>
 
-                    {/* Preview Placeholder */}
+                    {/* PDF Preview */}
                     <div className="p-4">
-                        <div className="bg-surface-alt dark:bg-surface-alt rounded-2xl aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-border dark:border-border-light gap-4 transition-colors">
-                            <div className="bg-background dark:bg-surface p-4 rounded-full shadow-card transition-colors">
-                                <FileText size={40} strokeWidth={1} className="text-text-muted/40" />
+                        {pdfUrl ? (
+                            <PDFViewer 
+                                url={pdfUrl} 
+                                className="max-w-full overflow-x-auto"
+                            />
+                        ) : (
+                            <div className="bg-surface-alt dark:bg-surface-alt rounded-2xl aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-border dark:border-border-light gap-4 transition-colors">
+                                <div className="bg-background dark:bg-surface p-4 rounded-full shadow-card transition-colors">
+                                    <FileText size={40} strokeWidth={1} className="text-text-muted/40" />
+                                </div>
+                                <p className="text-[14px] font-medium text-text-muted transition-colors">
+                                    Vista previa del documento
+                                </p>
                             </div>
-                            <p className="text-[14px] font-medium text-text-muted transition-colors">
-                                Vista previa del documento
-                            </p>
-                        </div>
+                        )}
                     </div>
 
                     {/* Metadata Section */}
@@ -101,14 +256,18 @@ export default function DocumentViewerPending() {
                                 <Calendar size={18} strokeWidth={2} />
                                 <span className="text-[14px] font-medium">Fecha de expedición</span>
                             </div>
-                            <span className="text-[14px] font-bold text-text-primary transition-colors">02 Nov 2023</span>
+                            <span className="text-[14px] font-bold text-text-primary transition-colors">
+                                {formatDate(doc.created_at || doc.date)}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-text-secondary transition-colors">
                                 <DollarSign size={18} strokeWidth={2} />
                                 <span className="text-[14px] font-medium">Monto total</span>
                             </div>
-                            <span className="text-[16px] font-extrabold text-primary">$2,500,000</span>
+                            <span className="text-[16px] font-extrabold text-primary">
+                                {formatAmount(doc.amount)}
+                            </span>
                         </div>
 
                         {/* Sign Button - Below Total Amount */}

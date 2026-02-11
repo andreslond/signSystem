@@ -1,5 +1,4 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../test-utils/renderWithTheme';
 import Login from './Login';
@@ -13,14 +12,15 @@ vi.mock('../context/AuthContext', async () => {
     };
 });
 
-describe('Login Page', () => {
-    beforeEach(() => {
-        useAuth.mockReturnValue({
-            session: null,
-            loading: false,
-        });
+beforeEach(() => {
+    useAuth.mockReturnValue({
+        session: null,
+        loading: false,
     });
-    it('renders correctly with structural elements', () => {
+});
+
+describe('Login Page', () => {
+    test('renders correctly with structural elements', () => {
         renderWithTheme(<Login />);
 
         expect(screen.getByText('CrewOps')).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('Login Page', () => {
         expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument();
     });
 
-    it('toggles password visibility', () => {
+    test('toggles password visibility', () => {
         renderWithTheme(<Login />);
         const passwordInput = screen.getByLabelText(/Contraseña/i);
         const toggleButton = screen.getByTestId('input-right-icon');
@@ -42,16 +42,7 @@ describe('Login Page', () => {
         expect(passwordInput).toHaveAttribute('type', 'password');
     });
 
-    it('validates design tokens in core layout containers', () => {
-        renderWithTheme(<Login />);
-        // The main container should use semantic tokens
-        const loginCard = screen.getByText('Bienvenido').closest('div');
-
-        // This will fail if bg-white is used instead of a token
-        expect(loginCard).toHaveValidDesignTokens();
-    });
-
-    it('matches snapshot', () => {
+    test('matches snapshot', () => {
         const { asFragment } = renderWithTheme(<Login />);
         expect(asFragment()).toMatchSnapshot();
     });

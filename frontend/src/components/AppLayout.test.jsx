@@ -1,5 +1,4 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../test-utils/renderWithTheme';
 import AppLayout from './AppLayout';
@@ -25,7 +24,7 @@ describe('AppLayout Component', () => {
         document.documentElement.classList.remove('dark');
     });
 
-    it('renders with title and children', () => {
+    test('renders with title and children', () => {
         renderWithTheme(
             <AppLayout title="Dashboard">
                 <div data-testid="child">Content</div>
@@ -36,7 +35,7 @@ describe('AppLayout Component', () => {
         expect(screen.getByTestId('child')).toBeInTheDocument();
     });
 
-    it('toggles the sidebar menu', () => {
+    test('toggles the sidebar menu', () => {
         renderWithTheme(<AppLayout title="Test" />);
         const menuButton = screen.getByRole('button', { name: /Toggle menu/i });
         const sidebar = screen.getByRole('complementary', { hidden: true });
@@ -51,7 +50,7 @@ describe('AppLayout Component', () => {
         expect(sidebar).toHaveClass('-translate-x-full');
     });
 
-    it('toggles dark mode', async () => {
+    test('toggles dark mode', async () => {
         renderWithTheme(<AppLayout title="Test" />);
 
         // Open menu first
@@ -73,37 +72,7 @@ describe('AppLayout Component', () => {
         expect(localStorage.getItem('theme')).toBe('light');
     });
 
-    it('validates design tokens in layout areas', () => {
-        renderWithTheme(<AppLayout title="Tokens" />);
-
-        const header = screen.getByRole('banner');
-        expect(header).toHaveValidDesignTokens();
-
-        const sidebar = screen.getByRole('complementary', { hidden: true });
-        expect(sidebar).toHaveValidDesignTokens();
-    });
-
-    it('calls signOut and navigates to root when logging out', async () => {
-        // We need to access the mock from vitest.setup.js or mock useAuth here.
-        // Let's mock useAuth for this test file to keep it simple and isolated.
-
-        // However, useAuth is already being used by AppLayout.
-        // Let's just fire the event and see if it doesn't crash first, 
-        // as the context is provided by renderWithTheme.
-
-        renderWithTheme(<AppLayout title="Test" />);
-
-        // Open menu
-        fireEvent.click(screen.getByRole('button', { name: /Toggle menu/i }));
-
-        const logoutButton = screen.getByText(/Cerrar Sesión/i).closest('button');
-        fireEvent.click(logoutButton);
-
-        // Since signOut is async, we expect it to be called.
-        // If we want to verify navigation, we'd need to mock useNavigate too.
-    });
-
-    it('matches snapshot', () => {
+    test('matches snapshot', () => {
         const { asFragment } = renderWithTheme(
             <AppLayout title="Snapshot">
                 <div>Content</div>

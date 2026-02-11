@@ -1,5 +1,37 @@
 import { ChevronRight, FileText, ReceiptText } from 'lucide-react';
 
+export const DocumentStatus = {
+    PENDING: 'PENDING',
+    SIGNED: 'SIGNED',
+    INVALIDATED: 'INVALIDATED',
+};
+
+// Status badge configurations
+const statusBadgeConfig = {
+    PENDING: {
+        label: 'Pendiente',
+        classes: 'bg-warning/10 dark:bg-warning/20 text-warning dark:text-warning',
+    },
+    SIGNED: {
+        label: 'Firmado',
+        classes: 'bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted',
+    },
+    INVALIDATED: {
+        label: 'Invalidado',
+        classes: 'bg-error/10 dark:bg-error/20 text-error dark:text-error',
+    },
+};
+
+/**
+ * Maps API status values to badge configuration
+ * @param {string} status - Status from API
+ * @returns {Object} Badge configuration
+ */
+export function getStatusBadge(status) {
+    const normalizedStatus = status?.toUpperCase();
+    return statusBadgeConfig[normalizedStatus] || statusBadgeConfig.PENDING;
+}
+
 export default function DocumentCard({
     title,
     subtitle,
@@ -10,17 +42,6 @@ export default function DocumentCard({
     className = ''
 }) {
     const Icon = type === 'receipt' ? ReceiptText : FileText;
-
-    const statusBadge = {
-        signed: {
-            label: 'Firmado',
-            classes: 'bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted'
-        },
-        pending: {
-            label: 'Pendiente',
-            classes: 'bg-warning/10 dark:bg-warning/20 text-warning'
-        }
-    };
 
     return (
         <div
@@ -44,9 +65,9 @@ export default function DocumentCard({
                     <h3 className="text-[17px] font-bold text-text-primary truncate">
                         {title}
                     </h3>
-                    {status && statusBadge[status] && (
-                        <span className={`${statusBadge[status].classes} px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors`}>
-                            {statusBadge[status].label}
+                    {status && (
+                        <span className={`${getStatusBadge(status).classes} px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors`}>
+                            {getStatusBadge(status).label}
                         </span>
                     )}
                 </div>
