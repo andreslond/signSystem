@@ -2,6 +2,7 @@
  * Centralized API Client for the document signing system.
  * Automatically attaches JWT token from Supabase session.
  * Handles 401 globally with forced logout only for auth failures.
+ * Supports the new standardized API response format with success/data/error structure.
  */
 
 import { supabase } from '../lib/supabase';
@@ -10,6 +11,31 @@ import { createErrorFromUnknown, NetworkError, AuthError } from '../utils/errors
 
 // Environment variable for backend base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+/**
+ * Standardized API response format
+ */
+export const ApiResponseFormat = {
+  SUCCESS: 'success',
+  DATA: 'data',
+  ERROR: 'error',
+  META: 'meta',
+};
+
+/**
+ * API Error codes matching backend
+ */
+export const API_ERROR_CODES = {
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  CONFLICT: 'CONFLICT',
+  RATE_LIMITED: 'RATE_LIMITED',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+};
 
 /**
  * HTTP methods supported by the API client
@@ -26,14 +52,56 @@ export const HttpMethod = {
  * Custom error class for API errors
  */
 export class ApiError extends Error {
-  constructor(message, statusCode = 500, code = 'API_ERROR', details = null) {
+  constructor(message, statusCode = 500, code = 'API_ERROR', details = null, path = null) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
     this.code = code;
     this.details = details;
+    this.path = path;
     Error.captureStackTrace(this, ApiError);
   }
+}
+
+/**
+ * Parse standardized API response
+ * @param {Object} response - Raw API response
+ * @param {boolean} response.success - Whether the request was successful
+ * @param {Object} response.data - Response data on success
+ * @param {Object} response.error - Error object on failure
+ * @returns {Object} Parsed response with data or throws ApiError
+ */
+export function parseApiResponse(response) {
+  // Handle non-object responses
+  if (typeof response !== 'object' || response === null) {
+    return { data: response, meta: null };
+  }
+
+  // Check for standardized API response format
+  if ('success' in response) {
+    if (response.success === true) {
+      // Success response
+      return {
+        data: response.data || null,
+        meta: response.meta || null,
+      };
+    }
+
+    // Error response with standardized format
+    if (response.success === false && response.error) {
+      const error = response.error;
+      throw new ApiError(
+        error.message || 'An error occurred',
+        error.statusCode || 500,
+        error.code || 'API_ERROR',
+        error.details || null,
+        error.path || null
+      );
+    }
+  }
+
+  // Fallback: return as-is for non-standardized responses
+  return { data: response, meta: null };
 }
 
 /**
@@ -155,19 +223,34 @@ async function request(endpoint, { method = HttpMethod.GET, body = null, headers
 
     // Handle non-2xx responses (but not 401, already handled above)
     if (!response.ok) {
-      const errorMessage = typeof data === 'object' && data?.message 
-        ? data.message 
-        : `HTTP ${response.status}: ${response.statusText}`;
-      
-      throw new ApiError(
-        errorMessage,
-        response.status,
-        data?.code || 'API_ERROR',
-        data?.details || null
-      );
+      // Try to parse as standardized error response
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let errorCode = 'API_ERROR';
+      let errorDetails = null;
+      let errorPath = null;
+
+      if (typeof data === 'object' && data !== null) {
+        // Check for standardized error format
+        if (data.success === false && data.error) {
+          errorMessage = data.error.message || errorMessage;
+          errorCode = data.error.code || errorCode;
+          errorDetails = data.error.details || null;
+          errorPath = data.error.path || null;
+        } else if (data.message) {
+          // Fallback to old format
+          errorMessage = data.message;
+          errorCode = data.code || errorCode;
+          errorDetails = data.details || null;
+        } else if (data.error) {
+          errorMessage = data.error;
+        }
+      }
+
+      throw new ApiError(errorMessage, response.status, errorCode, errorDetails, errorPath);
     }
 
-    return data;
+    // Parse standardized API response
+    return parseApiResponse(data);
   } catch (error) {
     // Handle network errors - DO NOT trigger logout
     // Network errors occur when there's no internet connection
@@ -302,6 +385,9 @@ export const apiClient = {
   fetchDocumentById,
   HttpMethod,
   ApiError,
+  ApiResponseFormat,
+  API_ERROR_CODES,
   PaginationParams,
+  parseApiResponse,
 };
 
