@@ -156,3 +156,13 @@ export type MockQueryBuilder<T = any> = {
   insert: jest.MockedFunction<() => Promise<SupabaseResult<T>>>
   update: jest.MockedFunction<any>
 }
+
+/**
+ * Response for PDF URL endpoint
+ */
+export interface PdfUrlResponse {
+  documentId: string
+  url: string
+  expiresAt: string
+  pdfType: 'original' | 'signed'
+}

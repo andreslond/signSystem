@@ -123,6 +123,46 @@ export class DocumentController {
     }
   }
 
+  /**
+   * GET /documents/:id/pdf-url
+   * Get a signed URL for viewing/downloading the PDF document
+   */
+  getDocumentPdfUrl = async (req: Request, res: Response) => {
+    try {
+      const expiresInSeconds = req.query.expiresInSeconds 
+        ? parseInt(req.query.expiresInSeconds as string, 10) 
+        : 3600
+
+      // Validate expiresInSeconds
+      if (isNaN(expiresInSeconds) || expiresInSeconds < 60 || expiresInSeconds > 86400) {
+        return res.status(400).json({ 
+          error: 'expiresInSeconds must be between 60 and 86400 (1 minute to 24 hours)' 
+        })
+      }
+
+      console.log(`[DocumentController] getDocumentPdfUrl: Generating PDF URL for document ${req.params.id}`)
+
+      const pdfUrlResponse = await req.documentService.getDocumentPdfUrl(
+        req.params.id as string,
+        req.user.id,
+        expiresInSeconds
+      )
+
+      console.log(`[DocumentController] getDocumentPdfUrl: Generated ${pdfUrlResponse.pdfType} PDF URL for document ${req.params.id}`)
+
+      // Return standardized API response
+      return sendSuccess(res, pdfUrlResponse)
+    } catch (error: any) {
+      console.error(`[DocumentController] getDocumentPdfUrl: Error - ${error.message}`)
+      
+      // Handle specific errors with appropriate status codes
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ error: error.message })
+      }
+      res.status(500).json({ error: error.message })
+    }
+  }
+
   signDocument = async (req: Request, res: Response) => {
     try {
       const signRequest: SignDocumentRequest = req.body

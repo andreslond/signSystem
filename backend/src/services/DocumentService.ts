@@ -1,6 +1,6 @@
 import { DocumentUserRepository } from '../repositories/DocumentUserRepository'
 import { DocumentAdminRepository } from '../repositories/DocumentAdminRepository'
-import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse, DocumentStatus, PaginationMeta, PaginatedDocumentsResponse, createPaginationMeta } from '../types'
+import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse, DocumentStatus, PaginationMeta, PaginatedDocumentsResponse, createPaginationMeta, PdfUrlResponse } from '../types'
 import { GCSUtil } from '../utils/gcs'
 import { PDFUtil, SignatureData } from '../utils/pdf'
 import { HashUtil } from '../utils/hash'
@@ -84,6 +84,47 @@ export class DocumentService {
 
   async getUserDocument(documentId: string, userId: string): Promise<Document | null> {
     return await this.documentUserRepository.getDocumentByIdWithEmployee(documentId, userId)
+  }
+
+  /**
+   * Get a signed URL for a document's PDF.
+   * Returns signed URL for the signed PDF if document is signed, otherwise returns original PDF URL.
+   * 
+   * @param documentId - The document ID
+   * @param userId - The user ID (for authorization)
+   * @param expiresInSeconds - URL expiration time in seconds (default: 3600 = 1 hour)
+   * @returns PdfUrlResponse with signed URL and metadata
+   */
+  async getDocumentPdfUrl(
+    documentId: string,
+    userId: string,
+    expiresInSeconds: number = 3600
+  ): Promise<PdfUrlResponse> {
+    // 1. Get document and validate ownership using user repository (RLS-enforced)
+    const document = await this.documentUserRepository.getDocumentById(documentId, userId)
+    if (!document) {
+      throw new Error('Document not found')
+    }
+
+    // 2. Determine which PDF to return based on document status
+    const isSigned = document.status === 'SIGNED' && document.pdf_signed_path
+    const pdfPath = isSigned ? document.pdf_signed_path! : document.pdf_original_path
+    const pdfType = isSigned ? 'signed' : 'original'
+
+    console.log(`[DocumentService] getDocumentPdfUrl: Generating ${pdfType} PDF URL for document ${documentId}`)
+
+    // 3. Generate signed URL for the PDF
+    const url = await GCSUtil.getSignedUrl(pdfPath, expiresInSeconds)
+
+    // 4. Calculate expiration timestamp
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+
+    return {
+      documentId,
+      url,
+      expiresAt,
+      pdfType
+    }
   }
 
   async signDocument(
