@@ -106,17 +106,35 @@ export class DocumentService {
       throw new Error('Document not found')
     }
 
-    // 2. Determine which PDF to return based on document status
-    const isSigned = document.status === 'SIGNED' && document.pdf_signed_path
-    const pdfPath = isSigned ? document.pdf_signed_path! : document.pdf_original_path
-    const pdfType = isSigned ? 'signed' : 'original'
+    // 2. If document is signed, we MUST return the signed PDF
+    // If signed PDF path is not available, throw an error
+    if (document.status === 'SIGNED') {
+      if (!document.pdf_signed_path) {
+        console.error(`[DocumentService] getDocumentPdfUrl: Document ${documentId} is marked as SIGNED but has no signed PDF path`)
+        throw new Error('Document is signed but signed PDF is not available')
+      }
+      
+      const url = await GCSUtil.getSignedUrl(document.pdf_signed_path, expiresInSeconds)
+      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+      
+      return {
+        documentId,
+        url,
+        expiresAt,
+        pdfType: 'signed'
+      }
+    }
+
+    // 3. For non-signed documents, return the original PDF
+    const pdfPath = document.pdf_original_path
+    const pdfType = 'original'
 
     console.log(`[DocumentService] getDocumentPdfUrl: Generating ${pdfType} PDF URL for document ${documentId}`)
 
-    // 3. Generate signed URL for the PDF
+    // 4. Generate signed URL for the PDF
     const url = await GCSUtil.getSignedUrl(pdfPath, expiresInSeconds)
 
-    // 4. Calculate expiration timestamp
+    // 5. Calculate expiration timestamp
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
 
     return {
@@ -149,7 +167,14 @@ export class DocumentService {
       email: userEmail,
       password: request.password
     })
-    if (authError || !authData.user) {
+    if (authError) {
+      console.error(`[DocumentService] signDocument: Authentication failed for user ${userEmail} - ${authError.message}`)
+      if (authError.message.includes('Invalid login credentials') || authError.message.includes('wrong password') || authError.message.includes('Invalid password')) {
+        throw new Error('Contraseña incorrecta')
+      }
+      throw new Error('Authentication failed')
+    }
+    if (!authData.user) {
       throw new Error('Authentication failed')
     }
 
@@ -201,7 +226,7 @@ export class DocumentService {
       })
 
       // 10. Update document as signed using admin repository (RLS-bypassed)
-      await this.documentAdminRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
+      await this.documentAdminRepository.updateDocumentAsSigned(documentId, signedHash, signedAt, signedPath)
       console.log(`[DocumentService] signDocument: Document ${documentId} signed successfully`)
     } catch (error) {
       // Rollback: delete signed PDF from GCS if it was uploaded

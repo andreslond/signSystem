@@ -153,7 +153,7 @@ export function useDocuments({
         setLoading(false);
       }
     }
-  }, [status, pagination.page, pagination.limit, documents.length]);
+  }, [status, pagination.page, pagination.limit]);
 
   // Fetch on mount and when pagination/status changes
   useEffect(() => {

@@ -9,6 +9,17 @@ import EmptyState, { EmptySignedState } from '../components/EmptyState';
 import SimplePagination from '../components/Pagination';
 import { useDocuments, DocumentStatus } from '../hooks/useDocuments';
 
+// Format date for display (DD/MM/YYYY)
+const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+};
+
 export default function DocumentListSigned() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
@@ -33,9 +44,11 @@ export default function DocumentListSigned() {
     // Transform API documents to card format
     const transformDocument = (doc) => ({
         id: doc.id,
-        title: doc.title || 'Documento sin título',
-        subtitle: doc.subtitle || doc.description || 'Sin descripción',
-        amount: doc.amount ? `$${Number(doc.amount).toLocaleString()}` : null,
+        title: 'Cuenta de Cobro',
+        subtitle: doc.payroll_period_start && doc.payroll_period_end
+            ? `${formatDateForDisplay(doc.payroll_period_start)} - ${formatDateForDisplay(doc.payroll_period_end)}`
+            : doc.subtitle || doc.description || 'Sin período',
+        amount: doc.amount ? `${Number(doc.amount).toLocaleString()}` : null,
         type: doc.type || 'receipt',
         status: doc.status,
         document: doc,

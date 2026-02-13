@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, History, Clock, AlertCircle, WifiOff } from 'lucide-react';
 import DocumentCard from '../components/DocumentCard';
 import AppLayout from '../components/AppLayout';
@@ -9,8 +9,20 @@ import EmptyState, { EmptyPendingState } from '../components/EmptyState';
 import Pagination, { SimplePagination } from '../components/Pagination';
 import { useDocuments, DocumentStatus } from '../hooks/useDocuments';
 
+// Format date for display (DD/MM/YYYY)
+const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+};
+
 export default function DocumentListPending() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
 
     const statusOptions = [
@@ -30,12 +42,23 @@ export default function DocumentListPending() {
         status: DocumentStatus.PENDING,
     });
 
+    // Handle refresh parameter from navigation after signing
+    useEffect(() => {
+        if (searchParams.get('refresh') === 'true') {
+            refetch();
+            // Remove the refresh parameter from URL
+            navigate('/documents/pending', { replace: true });
+        }
+    }, [searchParams, refetch, navigate]);
+
     // Transform API documents to card format
     const transformDocument = (doc) => ({
         id: doc.id,
-        title: doc.title || 'Documento sin título',
-        subtitle: doc.subtitle || doc.description || 'Sin descripción',
-        amount: doc.amount ? `$${Number(doc.amount).toLocaleString()}` : null,
+        title: 'Cuenta de Cobro',
+        subtitle: doc.payroll_period_start && doc.payroll_period_end
+            ? `${formatDateForDisplay(doc.payroll_period_start)} - ${formatDateForDisplay(doc.payroll_period_end)}`
+            : doc.subtitle || doc.description || 'Sin período',
+        amount: doc.amount ? `${Number(doc.amount).toLocaleString()}` : null,
         type: doc.type || 'receipt',
         status: doc.status,
         document: doc,

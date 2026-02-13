@@ -389,6 +389,22 @@ export async function fetchDocumentById(documentId) {
   return get(`/documents/${documentId}`);
 }
 
+/**
+ * Sign a document with password confirmation
+ * @param {string} documentId - Document ID to sign
+ * @param {string} password - User's password for authentication
+ * @param {string} fullName - Signer's full name
+ * @param {string} identificationNumber - Signer's identification number
+ * @returns {Promise<Object>} Response with success message
+ */
+export async function signDocument(documentId, password, fullName, identificationNumber) {
+  return post(`/documents/${documentId}/sign`, {
+    password,
+    fullName,
+    identificationNumber,
+  });
+}
+
 export const apiClient = {
   get,
   post,
@@ -399,6 +415,7 @@ export const apiClient = {
   fetchDocuments,
   fetchDocumentById,
   fetchDocumentPdfUrl,
+  signDocument,
   HttpMethod,
   ApiError,
   ApiResponseFormat,

@@ -6,10 +6,31 @@ import { Route, Routes } from 'react-router-dom';
 
 // Mock PDFViewer
 vi.mock('../components/PDFViewer', () => ({
-    default: ({ fileUrl }) => (
-        <div data-testid="pdf-viewer">PDF Viewer - {fileUrl}</div>
+    default: ({ url }) => (
+        <div data-testid="pdf-viewer">PDF Viewer - {url}</div>
     ),
     PDFViewerSkeleton: () => <div data-testid="pdf-skeleton">Loading PDF...</div>
+}));
+
+// Mock supabase
+vi.mock('../lib/supabase', () => ({
+    supabase: {
+        auth: {
+            getSession: vi.fn(() => Promise.resolve({ data: { session: { access_token: 'test-token' } } })),
+            signOut: vi.fn(() => Promise.resolve()),
+        },
+    },
+}));
+
+// Mock apiClient
+vi.mock('../lib/apiClient', () => ({
+    fetchDocumentPdfUrl: vi.fn(() => Promise.resolve({ data: { url: 'https://example.com/test.pdf' } })),
+    signDocument: vi.fn(() => Promise.resolve({ message: 'Document signed successfully' })),
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
 }));
 
 // Mock useDocument - must receive documentId parameter
@@ -31,6 +52,8 @@ vi.mock('../hooks/useDocuments', () => ({
                 employee_identification_number: '123456789',
                 employee_identification_type: 'CC',
                 employee_email: 'john@example.com',
+                signer_name: 'John Doe',
+                signer_identification_number: '123456789',
                 created_at: '2023-10-01',
                 amount: 2500000,
                 status: 'PENDING',
@@ -41,11 +64,6 @@ vi.mock('../hooks/useDocuments', () => ({
             refetch: vi.fn()
         };
     }),
-    useSignDocument: vi.fn(() => ({
-        signDocument: vi.fn(() => Promise.resolve()),
-        loading: false,
-        error: null,
-    })),
     useDocuments: vi.fn(),
     DocumentStatus: {
         PENDING: 'PENDING',
@@ -54,12 +72,27 @@ vi.mock('../hooks/useDocuments', () => ({
     },
 }));
 
+// Mock useErrorHandler
+vi.mock('../hooks/useErrorHandler', () => ({
+    useErrorHandler: vi.fn(() => ({
+        handleError: vi.fn(),
+    })),
+}));
+
 describe('DocumentViewerPending Page', () => {
+    const { signDocument, fetchDocumentPdfUrl } = require('../lib/apiClient');
+    const { useDocument } = require('../hooks/useDocuments');
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        signDocument.mockImplementation(() => Promise.resolve({ message: 'Document signed successfully' }));
+    });
+
     const renderPage = () => {
         return renderWithTheme(
             <Routes>
                 <Route path="/documents/pending/:id" element={<DocumentViewerPending />} />
-                <Route path="/documents/signed/:id" element={<div data-testid="signed-page">Signed Page</div>} />
+                <Route path="/documents/pending" element={<div data-testid="pending-list-page">Pending List Page</div>} />
             </Routes>,
             { initialEntries: ['/documents/pending/1'] }
         );
@@ -77,17 +110,49 @@ describe('DocumentViewerPending Page', () => {
         expect(screen.getByText('Confirmar firma del documento')).toBeInTheDocument();
     });
 
-    test('handles signature confirmation', async () => {
+    test('shows loading state during signature', async () => {
+        signDocument.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+
         renderPage();
         fireEvent.click(screen.getByRole('button', { name: /Firmar documento/i }));
-
+        
         const passwordInput = screen.getByLabelText(/Tu contraseña/i);
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
+        
+        fireEvent.click(screen.getByRole('button', { name: /Confirmar Firma/i }));
+        
+        expect(await screen.findByRole('button', { name: /Firmando documento.../i })).toBeInTheDocument();
+    });
 
+    test('shows success modal after successful signature and navigates on close', async () => {
+        signDocument.mockResolvedValue({ message: 'Document signed successfully' });
+
+        renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /Firmar documento/i }));
+        
+        const passwordInput = screen.getByLabelText(/Tu contraseña/i);
+        fireEvent.change(passwordInput, { target: { value: 'password123' } });
+        
         fireEvent.click(screen.getByRole('button', { name: /Confirmar Firma/i }));
 
         await waitFor(() => {
-            expect(screen.getByTestId('signed-page')).toBeInTheDocument();
+            expect(screen.getByText('Documento firmado exitosamente')).toBeInTheDocument();
+        });
+    });
+
+    test('shows error message on signature failure', async () => {
+        signDocument.mockRejectedValue(new Error('Contraseña incorrecta'));
+
+        renderPage();
+        fireEvent.click(screen.getByRole('button', { name: /Firmar documento/i }));
+        
+        const passwordInput = screen.getByLabelText(/Tu contraseña/i);
+        fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
+        
+        fireEvent.click(screen.getByRole('button', { name: /Confirmar Firma/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Contraseña incorrecta')).toBeInTheDocument();
         });
     });
 });

@@ -15,22 +15,24 @@ export default function DocumentViewerSigned() {
     // Fetch document using useDocument hook
     const { document: doc, loading, error, refetch } = useDocument(id);
 
-    // Fetch PDF URL when document is loaded
+    // Fetch PDF URL only once when document is loaded
     useEffect(() => {
-        if (doc?.id) {
-            const fetchPdfUrl = async () => {
-                try {
-                    const response = await fetchDocumentPdfUrl(doc.id);
-                    // The response has data.url from the standardized API format
-                    const url = response?.data?.url || response?.url;
+        if (!doc?.id || pdfUrl) return; // Skip if no doc id or already have URL
+        
+        const fetchPdfUrl = async () => {
+            try {
+                const response = await fetchDocumentPdfUrl(doc.id);
+                const url = response?.data?.url || response?.url;
+                if (url) {
                     setPdfUrl(url);
-                } catch (err) {
-                    console.error('Error fetching PDF URL:', err);
                 }
-            };
-            fetchPdfUrl();
-        }
-    }, [doc?.id]);
+            } catch (err) {
+                console.error('Error fetching PDF URL:', err);
+            }
+        };
+        
+        fetchPdfUrl();
+    }, [doc?.id, pdfUrl]);
 
     // Loading state
     console.log('Document loading state:', { loading, error, doc });
@@ -161,10 +163,12 @@ export default function DocumentViewerSigned() {
                             </span>
                         </div>
                         <h2 className="text-[22px] font-bold text-text-primary mb-1 leading-tight transition-colors">
-                            Documento #{doc.employee_id || doc.id.slice(0, 8)}
+                            Cuenta de Cobro
                         </h2>
                         <p className="text-[14px] text-text-secondary font-medium transition-colors">
-                            {`${formatDate(doc.payroll_period_start)} - ${formatDate(doc.payroll_period_end)}`}
+                            {doc.payroll_period_start && doc.payroll_period_end
+                                ? `${formatDate(doc.payroll_period_start)} - ${formatDate(doc.payroll_period_end)}`
+                                : `${doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'} ${doc.employee_identification_number}` : ''}`}
                         </p>
                     </div>
 
