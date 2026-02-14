@@ -46,17 +46,17 @@ export class DateUtil {
   }
 
   /**
-   * Converts a date from MM-DD-YYYY (PostgreSQL format) to DD-MM-YYYY (input format).
-   * @param date MM-DD-YYYY format
+   * Converts a date from YYYY-MM-DD (PostgreSQL format) to DD-MM-YYYY (input format).
+   * @param date YYYY-MM-DD format
    * @returns DD-MM-YYYY format
    */
   static fromPostgresFormat(date: string): string {
     const parts = date.split('-')
     if (parts.length !== 3) {
-      throw new Error(`Invalid date format: ${date}. Expected MM-DD-YYYY`)
+      throw new Error(`Invalid date format: ${date}. Expected YYYY-MM-DD`)
     }
 
-    const [month, day, year] = parts.map(Number)
+    const [year, month, day] = parts.map(Number)
 
     // Validate numeric values
     if (isNaN(month) || isNaN(day) || isNaN(year)) {

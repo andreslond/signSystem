@@ -38,11 +38,31 @@ describe('GCSUtil', () => {
     ;(GCSUtil as any).storage = null
     ;(GCSUtil as any).bucketName = null
 
+    // Set the GCP credentials environment variable for tests
+    process.env.GCP_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      type: 'service_account',
+      project_id: 'test-project',
+      private_key_id: 'test-key-id',
+      private_key: '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----\n',
+      client_email: 'test@test.iam.gserviceaccount.com',
+      client_id: 'test-client-id',
+      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+      token_uri: 'https://oauth2.googleapis.com/token',
+      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+      client_x509_cert_url: 'https://www.googleapis.com/robot/v1/metadata/x509/test'
+    })
+    process.env.GCS_BUCKET = 'test-bucket'
+
     // Get the mocked instances
     const Storage = require('@google-cloud/storage').Storage
     mockStorage = new Storage()
     mockBucket = mockStorage.bucket()
     mockFile = mockBucket.file()
+  })
+
+  afterEach(() => {
+    delete process.env.GCP_SERVICE_ACCOUNT_JSON
+    delete process.env.GCS_BUCKET
   })
 
   describe('downloadPdf', () => {
@@ -160,7 +180,10 @@ describe('GCSUtil', () => {
       await GCSUtil.downloadPdf('test.pdf')
 
       expect(require('@google-cloud/storage').Storage).toHaveBeenCalledWith({
-        keyFilename: expect.stringContaining('gcp-key.json'),
+        credentials: expect.objectContaining({
+          client_email: expect.any(String),
+          private_key: expect.any(String)
+        })
       })
       expect(mockStorage.bucket).toHaveBeenCalledWith('test-bucket')
     })

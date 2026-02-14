@@ -1,14 +1,41 @@
 import { Storage } from '@google-cloud/storage'
 import * as path from 'path'
 
+interface GcpCredentials {
+  type: string
+  project_id: string
+  private_key_id: string
+  private_key: string
+  client_email: string
+  client_id: string
+  auth_uri: string
+  token_uri: string
+  auth_provider_x509_cert_url: string
+  client_x509_cert_url: string
+}
+
 export class GCSUtil {
   private static storage: Storage
   private static bucketName: string
 
   static init() {
     if (!this.storage) {
-      const keyFilename = path.join(__dirname, '../../secrets/gcp-key.json')
-      this.storage = new Storage({ keyFilename })
+      const credentialsJson = process.env.GCP_SERVICE_ACCOUNT_JSON
+      
+      if (!credentialsJson) {
+        throw new Error('GCP_SERVICE_ACCOUNT_JSON environment variable is not set')
+      }
+      
+      let credentials: GcpCredentials
+      try {
+        credentials = JSON.parse(credentialsJson)
+      } catch (error) {
+        throw new Error('Failed to parse GCP_SERVICE_ACCOUNT_JSON: Invalid JSON format')
+      }
+      
+      this.storage = new Storage({
+        credentials
+      })
       this.bucketName = process.env.GCS_BUCKET!
     }
   }
