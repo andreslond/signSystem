@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert, ArrowDown, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Share2, FileText, Calendar, DollarSign, ShieldAlert, ArrowDown, AlertCircle, CheckCircle, Loader2, User, IdCard } from 'lucide-react';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
 import AppLayout from '../components/AppLayout';
-import PDFViewer, { PDFViewerSkeleton } from '../components/PDFViewer';
-import LoadingSpinner from '../components/LoadingSpinner';
+import PDFViewer from '../components/PDFViewer';
+import DocumentViewerSkeleton from '../components/DocumentViewerSkeleton';
 import { useDocument } from '../hooks/useDocuments';
-import { getDocumentUrl } from '../lib/apiClient';
+import { fetchDocumentPdfUrl, signDocument } from '../lib/apiClient';
 
 export default function DocumentViewerPending() {
     const navigate = useNavigate();
@@ -17,24 +17,31 @@ export default function DocumentViewerPending() {
     const [password, setPassword] = useState('');
     const [showScrollIndicator, setShowScrollIndicator] = useState(true);
     const [pdfUrl, setPdfUrl] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [signingLoading, setSigningLoading] = useState(false);
+    const [signingError, setSigningError] = useState(null);
 
     // Fetch document using useDocument hook
     const { document: doc, loading, error, refetch } = useDocument(id);
 
-    // Fetch PDF URL when document is loaded
+    // Fetch PDF URL only once when document is loaded
     useEffect(() => {
-        if (doc?.id) {
-            const fetchPdfUrl = async () => {
-                try {
-                    const url = await getDocumentUrl(doc.id);
+        if (!doc?.id || pdfUrl) return; // Skip if no doc id or already have URL
+        
+        const fetchPdfUrl = async () => {
+            try {
+                const response = await fetchDocumentPdfUrl(doc.id);
+                const url = response?.data?.url || response?.url;
+                if (url) {
                     setPdfUrl(url);
-                } catch (err) {
-                    console.error('Error fetching PDF URL:', err);
                 }
-            };
-            fetchPdfUrl();
-        }
-    }, [doc?.id]);
+            } catch (err) {
+                console.error('Error fetching PDF URL:', err);
+            }
+        };
+        
+        fetchPdfUrl();
+    }, [doc?.id, pdfUrl]);
 
     // Scroll indicator logic
     useEffect(() => {
@@ -60,52 +67,39 @@ export default function DocumentViewerPending() {
         setShowModal(true);
     };
 
-    const handleConfirmSign = (e) => {
+    const handleConfirmSign = async (e) => {
         e.preventDefault();
-        navigate(`/documents/signed/${id}`);
+        setSigningLoading(true);
+        setSigningError(null);
+
+        try {
+            await signDocument(
+                id,
+                password,
+                doc.signer_name || doc.employee_name,
+                doc.signer_identification_number || doc.employee_identification_number
+            );
+
+            // Close confirmation modal and show success modal
+            setShowModal(false);
+            setShowSuccessModal(true);
+        } catch (err) {
+            console.error('Error signing document:', err);
+            setSigningError(err.message || 'Error al firmar el documento. Verifica tu contraseña.');
+        } finally {
+            setSigningLoading(false);
+        }
     };
+
+    const handleSuccessModalClose = useCallback(() => {
+        setShowSuccessModal(false);
+        // Navigate to pending documents list with refresh parameter
+        navigate('/documents/pending?refresh=true', { replace: true });
+    }, [navigate]);
 
     // Loading state
     if (loading) {
-        return (
-            <AppLayout title="Detalle del Documento">
-                <div className="px-6 py-6 flex flex-col gap-6">
-                    {/* Back Action */}
-                    <button
-                        onClick={() => navigate('/documents/pending')}
-                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
-                    >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[15px] font-bold">Volver</span>
-                    </button>
-
-                    {/* Loading skeleton */}
-                    <div className="bg-background dark:bg-surface rounded-[24px] shadow-card overflow-hidden border border-transparent dark:border-border transition-colors">
-                        <div className="px-6 py-6 border-b border-border-light dark:border-border-light">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="bg-warning/10 dark:bg-warning/20 p-2 rounded-lg">
-                                    <FileText size={20} className="text-warning-dark dark:text-warning" />
-                                </div>
-                                <span className="bg-warning/10 dark:bg-warning/20 text-warning-dark dark:text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider">
-                                    Pendiente
-                                </span>
-                            </div>
-                            <div className="h-8 bg-surface-alt dark:bg-surface-alt rounded animate-pulse mb-2" />
-                            <div className="h-5 w-32 bg-surface-alt dark:bg-surface-alt rounded animate-pulse" />
-                        </div>
-
-                        <div className="p-4">
-                            <PDFViewerSkeleton />
-                        </div>
-
-                        <div className="px-6 py-4 bg-surface-alt dark:bg-surface-alt">
-                            <div className="h-6 w-48 bg-surface dark:bg-surface rounded animate-pulse mb-4" />
-                            <div className="h-10 w-full bg-primary/50 rounded-xl animate-pulse" />
-                        </div>
-                    </div>
-                </div>
-            </AppLayout>
-        );
+        return <DocumentViewerSkeleton />;
     }
 
     // Error state
@@ -164,7 +158,18 @@ export default function DocumentViewerPending() {
         );
     }
 
-    // Format date
+    // Format date for display (DD/MM/YYYY)
+    const formatDateForDisplay = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
+    // Format date for long display
     const formatDate = (dateString) => {
         if (!dateString) return 'No disponible';
         return new Date(dateString).toLocaleDateString('es-ES', {
@@ -222,11 +227,12 @@ export default function DocumentViewerPending() {
                             </span>
                         </div>
                         <h2 className="text-[22px] font-bold text-text-primary mb-1 leading-tight transition-colors">
-                            {doc.employee_name || `Documento #${doc.employee_id || doc.id.slice(0, 8)}`}
+                            Cuenta de Cobro
                         </h2>
                         <p className="text-[14px] text-text-secondary font-medium transition-colors">
-                            {doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'}: ${doc.employee_identification_number}` : ''}
-                            {doc.employee_email ? ` • ${doc.employee_email}` : ''}
+                            {doc.payroll_period_start && doc.payroll_period_end 
+                                ? `${formatDateForDisplay(doc.payroll_period_start)} - ${formatDateForDisplay(doc.payroll_period_end)}`
+                                : `${doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'}: ${doc.employee_identification_number}` : ''}`}
                         </p>
                     </div>
 
@@ -308,7 +314,13 @@ export default function DocumentViewerPending() {
             {/* Signature Confirmation Modal */}
             <Modal
                 isOpen={showModal}
-                onClose={() => setShowModal(false)}
+                onClose={() => {
+                    if (!signingLoading) {
+                        setShowModal(false);
+                        setPassword('');
+                        setSigningError(null);
+                    }
+                }}
                 variant="drawer"
             >
                 <div className="flex flex-col gap-6">
@@ -325,6 +337,32 @@ export default function DocumentViewerPending() {
                     </div>
 
                     <form onSubmit={handleConfirmSign} className="flex flex-col gap-6">
+                        {/* Employee Information - Read Only */}
+                        <div className="bg-surface-alt dark:bg-surface-alt p-4 rounded-2xl border border-border dark:border-border-light">
+                            <div className="flex items-center gap-3 mb-3">
+                                <User size={18} className="text-primary" />
+                                <span className="text-sm font-medium text-text-secondary">Información del Empleado</span>
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-text-muted flex items-center gap-1">
+                                        <User size={12} className="text-text-muted" />
+                                        Nombre completo
+                                    </span>
+                                    <span className="text-sm font-medium text-text-primary">{doc.employee_name || 'No disponible'}</span>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-text-muted flex items-center gap-1">
+                                        <IdCard size={12} className="text-text-muted" />
+                                        Número de identificación
+                                    </span>
+                                    <span className="text-sm font-medium text-text-primary">
+                                        {doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'} ${doc.employee_identification_number}` : 'No disponible'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="bg-surface-alt dark:bg-surface-alt p-4 rounded-2xl border border-border dark:border-border-light flex items-start gap-3 transition-colors">
                             <div className="text-text-secondary dark:text-text-muted mt-0.5 transition-colors">
                                 <ShieldAlert size={18} />
@@ -334,6 +372,15 @@ export default function DocumentViewerPending() {
                             </p>
                         </div>
 
+                        {signingError && (
+                            <div className="bg-error/10 dark:bg-error/20 border border-error/30 p-4 rounded-2xl">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle size={18} className="text-error shrink-0 mt-0.5" />
+                                    <p className="text-sm text-error">{signingError}</p>
+                                </div>
+                            </div>
+                        )}
+
                         <Input
                             label="Tu contraseña"
                             type="password"
@@ -341,25 +388,74 @@ export default function DocumentViewerPending() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            disabled={signingLoading}
                         />
 
                         <div className="flex flex-col gap-3 pt-2">
                             <Button
                                 type="submit"
                                 className="w-full"
+                                disabled={signingLoading || !password}
                             >
-                                Confirmar Firma
+                                {signingLoading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Loader2 size={18} className="animate-spin" />
+                                        Firmando documento...
+                                    </span>
+                                ) : (
+                                    'Confirmar Firma'
+                                )}
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => setShowModal(false)}
+                                onClick={() => {
+                                    setShowModal(false);
+                                    setPassword('');
+                                    setSigningError(null);
+                                }}
                                 className="w-full !border-none !bg-transparent text-text-muted hover:text-text-primary transition-colors"
                                 type="button"
+                                disabled={signingLoading}
                             >
                                 Cancelar
                             </Button>
                         </div>
                     </form>
+                </div>
+            </Modal>
+
+            {/* Success Modal */}
+            <Modal
+                isOpen={showSuccessModal}
+                onClose={handleSuccessModalClose}
+                variant="drawer"
+            >
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col items-center text-center gap-2">
+                        <div className="bg-success/10 dark:bg-success/20 p-4 rounded-full mb-2 transition-colors">
+                            <CheckCircle size={32} className="text-success-dark dark:text-success" />
+                        </div>
+                        <h2 className="text-[22px] font-bold text-text-primary leading-tight transition-colors">
+                            Documento firmado exitosamente
+                        </h2>
+                        <p className="text-[14px] text-text-secondary font-medium transition-colors">
+                            Tu documento ha sido firmado y ahora estará disponible en la lista de documentos firmados.
+                        </p>
+                    </div>
+
+                    <div className="bg-surface-alt dark:bg-surface-alt p-4 rounded-2xl border border-border dark:border-border-light flex items-start gap-3 transition-colors">
+                        <CheckCircle size={18} className="text-success shrink-0 mt-0.5" />
+                        <p className="text-[12px] text-text-secondary dark:text-text-secondary leading-relaxed transition-colors">
+                            La firma digital ha sido agregada al documento con marca de tiempo y información de autenticidad.
+                        </p>
+                    </div>
+
+                    <Button
+                        onClick={handleSuccessModalClose}
+                        className="w-full"
+                    >
+                        Ver mis documentos
+                    </Button>
                 </div>
             </Modal>
         </AppLayout>

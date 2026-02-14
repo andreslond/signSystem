@@ -40,11 +40,11 @@ Object.defineProperty(window, 'matchMedia', {
         dispatchEvent: vi.fn(),
     })),
 });
-// Mock Supabase
-vi.mock('./src/lib/supabase', () => ({
+// Mock Supabase - use absolute path for reliable module resolution
+vi.mock('../lib/supabase', () => ({
     supabase: {
         auth: {
-            getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+            getSession: vi.fn(() => Promise.resolve({ data: { session: { access_token: 'test-token' } }, error: null })),
             onAuthStateChange: vi.fn(() => ({
                 data: { subscription: { unsubscribe: vi.fn() } },
             })),
@@ -52,4 +52,9 @@ vi.mock('./src/lib/supabase', () => ({
             signOut: vi.fn(),
         },
     },
+}));
+
+// Mock errorHandlers
+vi.mock('../utils/errorHandlers', () => ({
+    logAppError: vi.fn(),
 }));

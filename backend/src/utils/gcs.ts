@@ -47,4 +47,25 @@ export class GCSUtil {
       throw new Error(`Failed to delete PDF from GCS: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
+
+  /**
+   * Generate a signed URL for accessing a PDF file
+   * @param filePath - Path to the file in GCS
+   * @param expiresInSeconds - URL expiration time in seconds (default: 3600 = 1 hour)
+   * @returns Signed URL string
+   */
+  static async getSignedUrl(filePath: string, expiresInSeconds: number = 3600): Promise<string> {
+    try {
+      this.init()
+      const file = this.storage.bucket(this.bucketName).file(filePath)
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + expiresInSeconds * 1000,
+        version: 'v4'
+      })
+      return url
+    } catch (error) {
+      throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 }

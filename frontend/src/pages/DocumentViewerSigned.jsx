@@ -1,10 +1,10 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Share2, FileText, Calendar, DollarSign, CheckCircle2, PenTool, AlertCircle, ShieldCheck } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import PDFViewer, { PDFViewerSkeleton } from '../components/PDFViewer';
-import LoadingSpinner from '../components/LoadingSpinner';
+import PDFViewer from '../components/PDFViewer';
+import DocumentViewerSkeleton from '../components/DocumentViewerSkeleton';
 import { useDocument } from '../hooks/useDocuments';
-import { getDocumentUrl } from '../lib/apiClient';
+import { fetchDocumentPdfUrl } from '../lib/apiClient';
 import { useState, useEffect } from 'react';
 
 export default function DocumentViewerSigned() {
@@ -15,61 +15,30 @@ export default function DocumentViewerSigned() {
     // Fetch document using useDocument hook
     const { document: doc, loading, error, refetch } = useDocument(id);
 
-    // Fetch PDF URL when document is loaded
+    // Fetch PDF URL only once when document is loaded
     useEffect(() => {
-        if (doc?.id) {
-            const fetchPdfUrl = async () => {
-                try {
-                    const url = await getDocumentUrl(doc.id);
+        if (!doc?.id || pdfUrl) return; // Skip if no doc id or already have URL
+        
+        const fetchPdfUrl = async () => {
+            try {
+                const response = await fetchDocumentPdfUrl(doc.id);
+                const url = response?.data?.url || response?.url;
+                if (url) {
                     setPdfUrl(url);
-                } catch (err) {
-                    console.error('Error fetching PDF URL:', err);
                 }
-            };
-            fetchPdfUrl();
-        }
-    }, [doc?.id]);
+            } catch (err) {
+                console.error('Error fetching PDF URL:', err);
+            }
+        };
+        
+        fetchPdfUrl();
+    }, [doc?.id, pdfUrl]);
 
     // Loading state
     console.log('Document loading state:', { loading, error, doc });
 
     if (loading) {
-        return (
-            <AppLayout title="Detalle del Documento">
-                <div className="px-6 py-6 flex flex-col gap-6">
-                    <button
-                        onClick={() => navigate('/documents/signed')}
-                        className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors py-1"
-                    >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[15px] font-bold">Volver</span>
-                    </button>
-
-                    <div className="bg-background dark:bg-surface rounded-[24px] shadow-card overflow-hidden border border-transparent dark:border-border transition-colors">
-                        <div className="px-6 py-6 border-b border-border-light dark:border-border-light">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="bg-surface dark:bg-surface-alt p-2 rounded-lg">
-                                    <FileText size={20} className="text-text-secondary dark:text-text-muted" />
-                                </div>
-                                <span className="bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider">
-                                    Firmado
-                                </span>
-                            </div>
-                            <div className="h-8 bg-surface-alt dark:bg-surface-alt rounded animate-pulse mb-2" />
-                            <div className="h-5 w-32 bg-surface-alt dark:bg-surface-alt rounded animate-pulse" />
-                        </div>
-
-                        <div className="p-4">
-                            <PDFViewerSkeleton />
-                        </div>
-
-                        <div className="px-6 py-6 bg-surface-alt dark:bg-surface-alt">
-                            <div className="h-20 w-full bg-surface dark:bg-surface rounded-xl animate-pulse" />
-                        </div>
-                    </div>
-                </div>
-            </AppLayout>
-        );
+        return <DocumentViewerSkeleton />;
     }
 
     // Error state
@@ -194,10 +163,12 @@ export default function DocumentViewerSigned() {
                             </span>
                         </div>
                         <h2 className="text-[22px] font-bold text-text-primary mb-1 leading-tight transition-colors">
-                            Documento #{doc.employee_id || doc.id.slice(0, 8)}
+                            Cuenta de Cobro
                         </h2>
                         <p className="text-[14px] text-text-secondary font-medium transition-colors">
-                            {`${formatDate(doc.payroll_period_start)} - ${formatDate(doc.payroll_period_end)}`}
+                            {doc.payroll_period_start && doc.payroll_period_end
+                                ? `${formatDate(doc.payroll_period_start)} - ${formatDate(doc.payroll_period_end)}`
+                                : `${doc.employee_identification_number ? `${doc.employee_identification_type || 'CC'} ${doc.employee_identification_number}` : ''}`}
                         </p>
                     </div>
 

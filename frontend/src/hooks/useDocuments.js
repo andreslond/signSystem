@@ -153,7 +153,7 @@ export function useDocuments({
         setLoading(false);
       }
     }
-  }, [status, pagination.page, pagination.limit, documents.length]);
+  }, [status, pagination.page, pagination.limit]);
 
   // Fetch on mount and when pagination/status changes
   useEffect(() => {
@@ -267,14 +267,12 @@ export function useDocument(documentId) {
       setSuccess(false);
 
       try {
-        console.log(`Fetching document with ID: ${documentId}`);
         const response = await fetchDocumentById(documentId);
         
         if (currentRequestId !== requestId.current) return;
         if (!isMounted.current) return;
         
         const documentData = response?.data || response?.document || response;
-        console.log('Fetched document data:', JSON.stringify(documentData, null, 2));
         setDocument(documentData);
         setSuccess(true);
       } catch (err) {

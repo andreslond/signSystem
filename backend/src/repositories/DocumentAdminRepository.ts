@@ -113,15 +113,17 @@ export class DocumentAdminRepository {
    * @param documentId - The ID of the document to update
    * @param signedHash - The hash of the signed PDF
    * @param signedAt - The timestamp when the document was signed
+   * @param signedPdfPath - The GCS path to the signed PDF
    */
-  async updateDocumentAsSigned(documentId: string, signedHash: string, signedAt: string): Promise<void> {
+  async updateDocumentAsSigned(documentId: string, signedHash: string, signedAt: string, signedPdfPath: string): Promise<void> {
     const { error } = await this.supabaseClient
       .schema('ar_signatures')
       .from('documents')
       .update({
         status: 'SIGNED',
         signed_hash: signedHash,
-        signed_at: signedAt
+        signed_at: signedAt,
+        pdf_signed_path: signedPdfPath
       })
       .eq('id', documentId)
 
@@ -129,6 +131,6 @@ export class DocumentAdminRepository {
       console.error('[DocumentAdminRepository] updateDocumentAsSigned: Failed to update document', { error: error.message, code: error.code, documentId })
       throw error
     }
-    console.log(`[DocumentAdminRepository] updateDocumentAsSigned: Updated document ${documentId} as signed`)
+    console.log(`[DocumentAdminRepository] updateDocumentAsSigned: Updated document ${documentId} as signed with PDF path ${signedPdfPath}`)
   }
 }

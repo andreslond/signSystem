@@ -60,7 +60,7 @@ exports[`DocumentCard Component > matches snapshot 1`] = `
               Work Authorization
             </h3>
             <span
-              class="bg-warning/10 dark:bg-warning/20 text-warning dark:text-warning px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
+              class="bg-warning/10 dark:bg-warning/20 text-warning dark:text-warning border border-warning/30 dark:border-warning/40 px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
             >
               Pendiente
             </span>

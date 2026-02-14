@@ -42,6 +42,11 @@ router.get('/:id', authMiddleware, createUserService, (req, res) => {
   return controller.getDocumentById(req, res)
 })
 
+router.get('/:id/pdf-url', authMiddleware, createUserService, (req, res) => {
+  const controller = getDocumentController()
+  return controller.getDocumentPdfUrl(req, res)
+})
+
 router.post('/:id/sign', authMiddleware, createUserService, (req, res) => {
   const controller = getDocumentController()
   return controller.signDocument(req, res)

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { logAppError } from '../utils/errorHandlers';
-import { createErrorFromUnknown, ApplicationError } from '../utils/errors';
+import { createErrorFromUnknown, ApplicationError, ApiErrorCodes } from '../utils/errors';
 
 /**
  * Custom hook for consistent error handling in React components.
@@ -66,18 +66,43 @@ export function withErrorHandler(WrappedComponent, context = 'WrappedComponent')
  */
 export const errorHandlers = {
   validation: (error, setError) => {
-    if (error.code === 'VALIDATION_ERROR') {
+    if (error.code === ApiErrorCodes.VALIDATION_ERROR) {
       setError(error.message);
       return true;
     }
     return false;
   },
 
-  auth: (error, onAuthError) => {
-    if (error.code === 'AUTH_ERROR' ||
+  unauthorized: (error, onAuthError) => {
+    if (error.code === ApiErrorCodes.UNAUTHORIZED ||
+        error.code === 'AUTH_ERROR' ||
         error.code === 'INVALID_CREDENTIALS' ||
         error.code === 'EMAIL_NOT_CONFIRMED') {
       onAuthError(error);
+      return true;
+    }
+    return false;
+  },
+
+  forbidden: (error, onForbiddenError) => {
+    if (error.code === ApiErrorCodes.FORBIDDEN) {
+      onForbiddenError(error);
+      return true;
+    }
+    return false;
+  },
+
+  notFound: (error, onNotFoundError) => {
+    if (error.code === ApiErrorCodes.NOT_FOUND) {
+      onNotFoundError(error);
+      return true;
+    }
+    return false;
+  },
+
+  conflict: (error, onConflictError) => {
+    if (error.code === ApiErrorCodes.CONFLICT) {
+      onConflictError(error);
       return true;
     }
     return false;
@@ -92,8 +117,19 @@ export const errorHandlers = {
   },
 
   rateLimit: (error, onRateLimit) => {
-    if (error.code === 'RATE_LIMIT_EXCEEDED' || error.statusCode === 429) {
+    if (error.code === ApiErrorCodes.RATE_LIMITED || error.statusCode === 429) {
       onRateLimit(error);
+      return true;
+    }
+    return false;
+  },
+
+  serverError: (error, onServerError) => {
+    if (error.code === ApiErrorCodes.INTERNAL_ERROR ||
+        error.code === ApiErrorCodes.DATABASE_ERROR ||
+        error.code === ApiErrorCodes.EXTERNAL_SERVICE_ERROR ||
+        error.statusCode >= 500) {
+      onServerError(error);
       return true;
     }
     return false;

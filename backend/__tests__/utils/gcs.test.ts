@@ -6,6 +6,7 @@ jest.mock('@google-cloud/storage', () => {
     download: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
+    getSignedUrl: jest.fn(),
   }
 
   const mockBucket = {
@@ -106,6 +107,49 @@ describe('GCSUtil', () => {
       mockFile.delete.mockRejectedValue(error)
 
       await expect(GCSUtil.deletePdf('test/path.pdf')).rejects.toThrow('Failed to delete PDF from GCS: Delete failed')
+    })
+  })
+
+  describe('getSignedUrl', () => {
+    it('should generate signed URL for PDF', async () => {
+      const mockSignedUrl = 'https://storage.googleapis.com/test-bucket/test/path.pdf?signature=abc123'
+      mockFile.getSignedUrl.mockResolvedValue([mockSignedUrl])
+
+      const result = await GCSUtil.getSignedUrl('test/path.pdf', 3600)
+
+      expect(mockStorage.bucket).toHaveBeenCalledWith('test-bucket')
+      expect(mockBucket.file).toHaveBeenCalledWith('test/path.pdf')
+      expect(mockFile.getSignedUrl).toHaveBeenCalledWith({
+        action: 'read',
+        expires: expect.any(Number),
+        version: 'v4'
+      })
+      expect(result).toBe(mockSignedUrl)
+    })
+
+    it('should use default expiration of 3600 seconds', async () => {
+      mockFile.getSignedUrl.mockResolvedValue(['https://example.com/signed-url'])
+
+      const beforeCall = Date.now()
+      await GCSUtil.getSignedUrl('test/path.pdf')
+      const afterCall = Date.now()
+
+      expect(mockFile.getSignedUrl).toHaveBeenCalledWith({
+        action: 'read',
+        expires: expect.any(Number),
+        version: 'v4'
+      })
+      // Verify expiration is approximately 1 hour from now
+      const expiresArg = mockFile.getSignedUrl.mock.calls[0][0].expires
+      expect(expiresArg).toBeGreaterThanOrEqual(beforeCall + 3600 * 1000 - 1000)
+      expect(expiresArg).toBeLessThanOrEqual(afterCall + 3600 * 1000 + 1000)
+    })
+
+    it('should throw error on getSignedUrl failure', async () => {
+      const error = new Error('URL generation failed')
+      mockFile.getSignedUrl.mockRejectedValue(error)
+
+      await expect(GCSUtil.getSignedUrl('test/path.pdf')).rejects.toThrow('Failed to generate signed URL: URL generation failed')
     })
   })
 

@@ -1,12 +1,19 @@
 import { DocumentUserRepository } from '../repositories/DocumentUserRepository'
 import { DocumentAdminRepository } from '../repositories/DocumentAdminRepository'
-import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse } from '../types'
+import { Document, SignDocumentRequest, UploadDocumentRequest, UploadDocumentResponse, DocumentStatus, PaginationMeta, PaginatedDocumentsResponse, createPaginationMeta, PdfUrlResponse } from '../types'
 import { GCSUtil } from '../utils/gcs'
 import { PDFUtil, SignatureData } from '../utils/pdf'
 import { HashUtil } from '../utils/hash'
 import { DateUtil } from '../utils/date'
 import { createSupabaseAdminClient } from '../config/supabase'
 import { v4 as uuidv4 } from 'uuid'
+
+/**
+ * Default pagination settings
+ */
+const DEFAULT_PAGE = 1
+const DEFAULT_LIMIT = 10
+const MAX_LIMIT = 50
 
 export class DocumentService {
   constructor(private userToken: string) {}
@@ -19,12 +26,123 @@ export class DocumentService {
     return new DocumentAdminRepository()
   }
 
+  /**
+   * Get paginated documents for a user with optional status filtering.
+   * 
+   * @param userId - The user ID
+   * @param status - Optional status filter (PENDING, SIGNED, INVALIDATED)
+   * @param page - Page number (1-indexed, default: 1)
+   * @param limit - Items per page (default: 10, max: 50)
+   * @returns Paginated documents response with metadata
+   */
+  async listUserDocumentsByStatus(
+    userId: string,
+    status: DocumentStatus | null,
+    page: number = DEFAULT_PAGE,
+    limit: number = DEFAULT_LIMIT
+  ): Promise<PaginatedDocumentsResponse> {
+    // Ensure limit doesn't exceed maximum
+    const validLimit = Math.min(limit, MAX_LIMIT)
+    
+    // Calculate offset from page number
+    const offset = (page - 1) * validLimit
+
+    // Fetch documents and total count in parallel for efficiency
+    const [documents, total] = await Promise.all([
+      this.documentUserRepository.listDocumentsByUserAndStatus(userId, status, validLimit, offset),
+      this.documentUserRepository.countDocumentsByUserAndStatus(userId, status)
+    ])
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / validLimit)
+
+    const pagination: PaginationMeta = {
+      total,
+      page,
+      limit: validLimit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    }
+
+    console.log(`[DocumentService] listUserDocumentsByStatus: Retrieved ${documents.length} of ${total} documents for user ${userId}, status=${status || 'all'}, page=${page}, limit=${validLimit}`)
+
+    return {
+      data: documents,
+      pagination
+    }
+  }
+
+  /**
+   * List all user documents (legacy method, kept for backward compatibility)
+   * @param userId - The user ID
+   * @returns Array of documents
+   */
   async listUserDocuments(userId: string): Promise<Document[]> {
     return await this.documentUserRepository.listDocumentsByUser(userId)
   }
 
   async getUserDocument(documentId: string, userId: string): Promise<Document | null> {
-    return await this.documentUserRepository.getDocumentById(documentId, userId)
+    return await this.documentUserRepository.getDocumentByIdWithEmployee(documentId, userId)
+  }
+
+  /**
+   * Get a signed URL for a document's PDF.
+   * Returns signed URL for the signed PDF if document is signed, otherwise returns original PDF URL.
+   * 
+   * @param documentId - The document ID
+   * @param userId - The user ID (for authorization)
+   * @param expiresInSeconds - URL expiration time in seconds (default: 3600 = 1 hour)
+   * @returns PdfUrlResponse with signed URL and metadata
+   */
+  async getDocumentPdfUrl(
+    documentId: string,
+    userId: string,
+    expiresInSeconds: number = 3600
+  ): Promise<PdfUrlResponse> {
+    // 1. Get document and validate ownership using user repository (RLS-enforced)
+    const document = await this.documentUserRepository.getDocumentById(documentId, userId)
+    if (!document) {
+      throw new Error('Document not found')
+    }
+
+    // 2. If document is signed, we MUST return the signed PDF
+    // If signed PDF path is not available, throw an error
+    if (document.status === 'SIGNED') {
+      if (!document.pdf_signed_path) {
+        console.error(`[DocumentService] getDocumentPdfUrl: Document ${documentId} is marked as SIGNED but has no signed PDF path`)
+        throw new Error('Document is signed but signed PDF is not available')
+      }
+      
+      const url = await GCSUtil.getSignedUrl(document.pdf_signed_path, expiresInSeconds)
+      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+      
+      return {
+        documentId,
+        url,
+        expiresAt,
+        pdfType: 'signed'
+      }
+    }
+
+    // 3. For non-signed documents, return the original PDF
+    const pdfPath = document.pdf_original_path
+    const pdfType = 'original'
+
+    console.log(`[DocumentService] getDocumentPdfUrl: Generating ${pdfType} PDF URL for document ${documentId}`)
+
+    // 4. Generate signed URL for the PDF
+    const url = await GCSUtil.getSignedUrl(pdfPath, expiresInSeconds)
+
+    // 5. Calculate expiration timestamp
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+
+    return {
+      documentId,
+      url,
+      expiresAt,
+      pdfType
+    }
   }
 
   async signDocument(
@@ -49,7 +167,14 @@ export class DocumentService {
       email: userEmail,
       password: request.password
     })
-    if (authError || !authData.user) {
+    if (authError) {
+      console.error(`[DocumentService] signDocument: Authentication failed for user ${userEmail} - ${authError.message}`)
+      if (authError.message.includes('Invalid login credentials') || authError.message.includes('wrong password') || authError.message.includes('Invalid password')) {
+        throw new Error('Contraseña incorrecta')
+      }
+      throw new Error('Authentication failed')
+    }
+    if (!authData.user) {
       throw new Error('Authentication failed')
     }
 
@@ -101,12 +226,10 @@ export class DocumentService {
       })
 
       // 10. Update document as signed using admin repository (RLS-bypassed)
-      await this.documentAdminRepository.updateDocumentAsSigned(documentId, signedHash, signedAt)
+      await this.documentAdminRepository.updateDocumentAsSigned(documentId, signedHash, signedAt, signedPath)
       console.log(`[DocumentService] signDocument: Document ${documentId} signed successfully`)
     } catch (error) {
       // Rollback: delete signed PDF from GCS if it was uploaded
-      // Note: DB operations use admin repository so they should succeed if we reach this point,
-      // but we still keep the rollback for GCS operations
       if (signedPathUploaded) {
         try {
           await GCSUtil.deletePdf(signedPathUploaded)

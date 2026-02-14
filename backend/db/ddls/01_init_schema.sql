@@ -28,18 +28,18 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Table: employees
 -- Stores employee information linked to external systems
--- CREATE TABLE ar_nomina.employees (
---     id bigint PRIMARY KEY,
---     name text NOT NULL,
---     email text,
---     identification_number text,
---     identification_type text,
---     active boolean DEFAULT true,
---     company_id bigint,
---     external_employee_id text,
---     external_provider_id text,
---     created_at timestamp with time zone DEFAULT now()
--- );
+CREATE TABLE ar_nomina.employees (
+    id bigint PRIMARY KEY,
+    name text NOT NULL,
+    email text,
+    identification_number text,
+    identification_type text,
+    active boolean DEFAULT true,
+    company_id bigint,
+    external_employee_id text,
+    external_provider_id text,
+    created_at timestamp with time zone DEFAULT now()
+);
 
 -- Table: profiles
 -- Links Supabase Auth users to employees
@@ -67,6 +67,7 @@ CREATE TABLE ar_signatures.documents (
     signed_at timestamp with time zone,
     superseded_by uuid REFERENCES ar_signatures.documents(id),
     is_active boolean NOT NULL DEFAULT true,
+    amount numeric(12, 2) DEFAULT 0,
 
     -- Constraints
     CONSTRAINT valid_date_range CHECK (payroll_period_start <= payroll_period_end),
@@ -85,6 +86,7 @@ CREATE TABLE ar_signatures.signatures (
     document_id uuid NOT NULL REFERENCES ar_signatures.documents(id) ON DELETE CASCADE,
     name text NOT NULL,
     identification_number text NOT NULL,
+    identification_type text,
     ip text NOT NULL,
     user_agent text NOT NULL,
     hash_sign text NOT NULL,
@@ -112,7 +114,8 @@ CREATE INDEX idx_documents_active_period_range ON ar_signatures.documents(
     payroll_period_start,
     payroll_period_end
 ) WHERE is_active = true;
-CREATE INDEX idx_documents_user_created_at_desc ON ar_signatures.documents (user_id, created_at DESC);
+CREATE INDEX idx_documents_user_status_created ON ar_signatures.documents (user_id, status, created_at DESC);
+CREATE INDEX idx_documents_user_created ON ar_signatures.documents (user_id, created_at DESC);
 
 -- Signatures indexes
 CREATE INDEX idx_signatures_document_id ON ar_signatures.signatures(document_id);
@@ -167,7 +170,7 @@ CREATE POLICY "Signatures are manageable by service role" ON ar_signatures.signa
 
 
 -- =========================================
--- 8. GRANTS AND PERMISSIONS
+-- 6. GRANTS AND PERMISSIONS
 -- =========================================
 
 -- Grant usage on schema
@@ -189,35 +192,7 @@ GRANT UPDATE ON ar_signatures.documents TO authenticated, service_role;
 GRANT UPDATE ON ar_signatures.profiles TO authenticated, service_role;
 
 -- =========================================
--- 9. MIGRATION HELPERS
--- =========================================
-
--- Function to migrate old payroll_period format (if needed)
--- CREATE OR REPLACE FUNCTION ar_signatures.migrate_payroll_period(
---     old_period text
--- ) RETURNS TABLE(start_date date, end_date date) AS $$
--- DECLARE
---     year_part text;
---     month_part text;
---     start_date_val date;
---     end_date_val date;
--- BEGIN
---     -- Extract year and month from "YYYY-MM" format
---     year_part := split_part(old_period, '-', 1);
---     month_part := split_part(old_period, '-', 2);
-
---     -- Create start date (first day of month)
---     start_date_val := make_date(year_part::integer, month_part::integer, 1);
-
---     -- Create end date (last day of month)
---     end_date_val := (start_date_val + interval '1 month' - interval '1 day')::date;
-
---     RETURN QUERY SELECT start_date_val, end_date_val;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- =========================================
--- 10. COMMENTS AND DOCUMENTATION
+-- 7. COMMENTS AND DOCUMENTATION
 -- =========================================
 
 COMMENT ON SCHEMA ar_signatures IS 'Schema containing all tables and functions for the SignSystem document signing functionality';
@@ -231,6 +206,9 @@ COMMENT ON COLUMN ar_signatures.documents.payroll_period_start IS 'Start date of
 COMMENT ON COLUMN ar_signatures.documents.payroll_period_end IS 'End date of payroll period in MM-DD-YYYY format';
 COMMENT ON COLUMN ar_signatures.documents.status IS 'Document status: PENDING (can be signed), SIGNED (completed), INVALIDATED (superseded)';
 COMMENT ON COLUMN ar_signatures.documents.is_active IS 'Whether this document is the current active version';
+COMMENT ON COLUMN ar_signatures.documents.amount IS 'Total amount for the payroll document';
+
+COMMENT ON COLUMN ar_signatures.signatures.identification_type IS 'Type of identification (CC, CE, NIT, etc.)';
 
 -- =========================================
 -- END OF INITIALIZATION SCRIPT

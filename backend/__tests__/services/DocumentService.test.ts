@@ -83,15 +83,141 @@ describe('DocumentService', () => {
       }
 
       const mockRepoInstance = {
-        getDocumentById: jest.fn().mockResolvedValue(mockDocument),
+        getDocumentByIdWithEmployee: jest.fn().mockResolvedValue(mockDocument),
       } as any
 
       mockDocumentUserRepository.mockImplementation(() => mockRepoInstance)
 
       const result = await service.getUserDocument('doc-123', 'user-123')
 
-      expect(mockRepoInstance.getDocumentById).toHaveBeenCalledWith('doc-123', 'user-123')
+      expect(mockRepoInstance.getDocumentByIdWithEmployee).toHaveBeenCalledWith('doc-123', 'user-123')
       expect(result).toEqual(mockDocument)
+    })
+
+    describe('getDocumentPdfUrl', () => {
+      it('should return signed URL for original PDF when document is PENDING', async () => {
+        const service = new DocumentService('test-token')
+        const mockDocument: Document = {
+          id: 'doc-123',
+          user_id: 'user-123',
+          employee_id: 456,
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
+          pdf_original_path: 'original/user-123/doc-123.pdf',
+          pdf_signed_path: null,
+          status: 'PENDING',
+          original_hash: 'hash123',
+          signed_hash: null,
+          created_at: '2025-01-01T00:00:00Z',
+          signed_at: null,
+          superseded_by: null,
+          is_active: true,
+        }
+
+        const mockSignedUrl = 'https://storage.googleapis.com/test-bucket/original/user-123/doc-123.pdf?signature=abc123'
+
+        const mockUserRepoInstance = {
+          getDocumentById: jest.fn().mockResolvedValue(mockDocument),
+        } as any
+        mockDocumentUserRepository.mockImplementation(() => mockUserRepoInstance)
+
+        mockGCSUtil.getSignedUrl.mockResolvedValue(mockSignedUrl)
+
+        const result = await service.getDocumentPdfUrl('doc-123', 'user-123')
+
+        expect(mockUserRepoInstance.getDocumentById).toHaveBeenCalledWith('doc-123', 'user-123')
+        expect(mockGCSUtil.getSignedUrl).toHaveBeenCalledWith('original/user-123/doc-123.pdf', 3600)
+        expect(result).toEqual({
+          documentId: 'doc-123',
+          url: mockSignedUrl,
+          expiresAt: expect.any(String),
+          pdfType: 'original'
+        })
+      })
+
+      it('should return signed URL for signed PDF when document is SIGNED', async () => {
+        const service = new DocumentService('test-token')
+        const mockDocument: Document = {
+          id: 'doc-123',
+          user_id: 'user-123',
+          employee_id: 456,
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
+          pdf_original_path: 'original/user-123/doc-123.pdf',
+          pdf_signed_path: 'signed/user-123/doc-123.pdf',
+          status: 'SIGNED',
+          original_hash: 'hash123',
+          signed_hash: 'signed_hash456',
+          created_at: '2025-01-01T00:00:00Z',
+          signed_at: '2025-01-02T00:00:00Z',
+          superseded_by: null,
+          is_active: true,
+        }
+
+        const mockSignedUrl = 'https://storage.googleapis.com/test-bucket/signed/user-123/doc-123.pdf?signature=xyz789'
+
+        const mockUserRepoInstance = {
+          getDocumentById: jest.fn().mockResolvedValue(mockDocument),
+        } as any
+        mockDocumentUserRepository.mockImplementation(() => mockUserRepoInstance)
+
+        mockGCSUtil.getSignedUrl.mockResolvedValue(mockSignedUrl)
+
+        const result = await service.getDocumentPdfUrl('doc-123', 'user-123')
+
+        expect(mockUserRepoInstance.getDocumentById).toHaveBeenCalledWith('doc-123', 'user-123')
+        expect(mockGCSUtil.getSignedUrl).toHaveBeenCalledWith('signed/user-123/doc-123.pdf', 3600)
+        expect(result).toEqual({
+          documentId: 'doc-123',
+          url: mockSignedUrl,
+          expiresAt: expect.any(String),
+          pdfType: 'signed'
+        })
+      })
+
+      it('should throw error when document not found', async () => {
+        const service = new DocumentService('test-token')
+
+        const mockUserRepoInstance = {
+          getDocumentById: jest.fn().mockResolvedValue(null),
+        } as any
+        mockDocumentUserRepository.mockImplementation(() => mockUserRepoInstance)
+
+        await expect(
+          service.getDocumentPdfUrl('doc-123', 'user-123')
+        ).rejects.toThrow('Document not found')
+      })
+
+      it('should use custom expiration time', async () => {
+        const service = new DocumentService('test-token')
+        const mockDocument: Document = {
+          id: 'doc-123',
+          user_id: 'user-123',
+          employee_id: 456,
+          payroll_period_start: '01-01-2025',
+          payroll_period_end: '31-01-2025',
+          pdf_original_path: 'original/user-123/doc-123.pdf',
+          pdf_signed_path: null,
+          status: 'PENDING',
+          original_hash: 'hash123',
+          signed_hash: null,
+          created_at: '2025-01-01T00:00:00Z',
+          signed_at: null,
+          superseded_by: null,
+          is_active: true,
+        }
+
+        const mockUserRepoInstance = {
+          getDocumentById: jest.fn().mockResolvedValue(mockDocument),
+        } as any
+        mockDocumentUserRepository.mockImplementation(() => mockUserRepoInstance)
+
+        mockGCSUtil.getSignedUrl.mockResolvedValue('https://example.com/signed-url')
+
+        await service.getDocumentPdfUrl('doc-123', 'user-123', 7200)
+
+        expect(mockGCSUtil.getSignedUrl).toHaveBeenCalledWith('original/user-123/doc-123.pdf', 7200)
+      })
     })
   })
 

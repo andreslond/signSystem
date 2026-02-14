@@ -10,15 +10,15 @@ export const DocumentStatus = {
 const statusBadgeConfig = {
     PENDING: {
         label: 'Pendiente',
-        classes: 'bg-warning/10 dark:bg-warning/20 text-warning dark:text-warning',
+        classes: 'bg-warning/10 dark:bg-warning/20 text-warning dark:text-warning border border-warning/30 dark:border-warning/40',
     },
     SIGNED: {
         label: 'Firmado',
-        classes: 'bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted',
+        classes: 'bg-surface dark:bg-surface-alt text-text-secondary dark:text-text-muted border border-border/50 dark:border-border-dark/50',
     },
     INVALIDATED: {
         label: 'Invalidado',
-        classes: 'bg-error/10 dark:bg-error/20 text-error dark:text-error',
+        classes: 'bg-error/10 dark:bg-error/20 text-error dark:text-error border border-error/30 dark:border-error/40',
     },
 };
 

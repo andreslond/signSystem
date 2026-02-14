@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { DocumentController } from '../../src/controllers/DocumentController'
 import { DocumentService } from '../../src/services/DocumentService'
-import { Document, UploadDocumentRequest, UploadDocumentResponse } from '../../src/types'
+import { Document, UploadDocumentRequest, UploadDocumentResponse, PdfUrlResponse } from '../../src/types'
 
 // Mock DocumentService
 jest.mock('../../src/services/DocumentService')
@@ -51,26 +51,155 @@ describe('DocumentController', () => {
         ]
 
         const mockServiceInstance = {
-          listUserDocuments: jest.fn().mockResolvedValue(mockDocuments),
+          listUserDocumentsByStatus: jest.fn().mockResolvedValue({
+            data: mockDocuments,
+            pagination: {
+              total: 1,
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPrevPage: false,
+            }
+          }),
         }
 
         mockRequest = {
+          query: {},
           user: { id: 'user-123' },
           documentService: mockServiceInstance as any,
         }
 
         await controller.getDocuments(mockRequest as Request, mockResponse as Response)
 
-        expect(mockServiceInstance.listUserDocuments).toHaveBeenCalledWith('user-123')
-        expect(mockResponse.json).toHaveBeenCalledWith(mockDocuments)
+        expect(mockServiceInstance.listUserDocumentsByStatus).toHaveBeenCalledWith('user-123', null, 1, 10)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockDocuments,
+          meta: {
+            pagination: {
+              total: 1,
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+            timestamp: expect.any(String),
+          }
+        })
+      })
+
+      it('should return user documents with status filter', async () => {
+        const mockDocuments: Document[] = [
+          {
+            id: 'doc-1',
+            user_id: 'user-123',
+            employee_id: 456,
+            payroll_period_start: '01-01-2025',
+            payroll_period_end: '31-01-2025',
+            pdf_original_path: 'original/user-123/doc-1.pdf',
+            pdf_signed_path: null,
+            status: 'PENDING',
+            original_hash: 'hash1',
+            signed_hash: null,
+            created_at: '2025-01-01T00:00:00Z',
+            signed_at: null,
+            superseded_by: null,
+            is_active: true,
+          },
+        ]
+
+        const mockServiceInstance = {
+          listUserDocumentsByStatus: jest.fn().mockResolvedValue({
+            data: mockDocuments,
+            pagination: {
+              total: 1,
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPrevPage: false,
+            }
+          }),
+        }
+
+        mockRequest = {
+          query: { status: 'PENDING' },
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        }
+
+        await controller.getDocuments(mockRequest as Request, mockResponse as Response)
+
+        expect(mockServiceInstance.listUserDocumentsByStatus).toHaveBeenCalledWith('user-123', 'PENDING', 1, 10)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockDocuments,
+          meta: {
+            pagination: {
+              total: 1,
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+            timestamp: expect.any(String),
+          }
+        })
+      })
+
+      it('should return user documents with pagination', async () => {
+        const mockDocuments: Document[] = []
+
+        const mockServiceInstance = {
+          listUserDocumentsByStatus: jest.fn().mockResolvedValue({
+            data: mockDocuments,
+            pagination: {
+              total: 25,
+              page: 2,
+              limit: 10,
+              totalPages: 3,
+              hasNextPage: true,
+              hasPrevPage: true,
+            }
+          }),
+        }
+
+        mockRequest = {
+          query: { page: '2', limit: '10' },
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        }
+
+        await controller.getDocuments(mockRequest as Request, mockResponse as Response)
+
+        expect(mockServiceInstance.listUserDocumentsByStatus).toHaveBeenCalledWith('user-123', null, 2, 10)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockDocuments,
+          meta: {
+            pagination: {
+              total: 25,
+              page: 2,
+              limit: 10,
+              totalPages: 3,
+              hasNextPage: true,
+              hasPrevPage: true,
+            },
+            timestamp: expect.any(String),
+          }
+        })
       })
 
       it('should handle errors', async () => {
         const mockServiceInstance = {
-          listUserDocuments: jest.fn().mockRejectedValue(new Error('Service error')),
+          listUserDocumentsByStatus: jest.fn().mockRejectedValue(new Error('Service error')),
         }
 
         mockRequest = {
+          query: {},
           user: { id: 'user-123' },
           documentService: mockServiceInstance as any,
         } as any
@@ -114,7 +243,13 @@ describe('DocumentController', () => {
         await controller.getDocumentById(mockRequest as Request, mockResponse as Response)
 
         expect(mockServiceInstance.getUserDocument).toHaveBeenCalledWith('doc-123', 'user-123')
-        expect(mockResponse.json).toHaveBeenCalledWith(mockDocument)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockDocument,
+          meta: {
+            timestamp: expect.any(String),
+          }
+        })
       })
 
       it('should return 404 when document not found', async () => {
@@ -132,6 +267,162 @@ describe('DocumentController', () => {
 
         expect(mockResponse.status).toHaveBeenCalledWith(404)
         expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Document not found' })
+      })
+    })
+
+    describe('getDocumentPdfUrl', () => {
+      it('should return signed URL for PDF successfully', async () => {
+        const mockPdfUrlResponse: PdfUrlResponse = {
+          documentId: 'doc-123',
+          url: 'https://storage.googleapis.com/test-bucket/original/user-123/doc-123.pdf?signature=abc123',
+          expiresAt: '2025-01-02T00:00:00.000Z',
+          pdfType: 'original'
+        }
+
+        const mockServiceInstance = {
+          getDocumentPdfUrl: jest.fn().mockResolvedValue(mockPdfUrlResponse),
+        }
+
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: {},
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockServiceInstance.getDocumentPdfUrl).toHaveBeenCalledWith('doc-123', 'user-123', 3600)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockPdfUrlResponse,
+          meta: {
+            timestamp: expect.any(String),
+          }
+        })
+      })
+
+      it('should return signed URL for signed PDF', async () => {
+        const mockPdfUrlResponse: PdfUrlResponse = {
+          documentId: 'doc-123',
+          url: 'https://storage.googleapis.com/test-bucket/signed/user-123/doc-123.pdf?signature=xyz789',
+          expiresAt: '2025-01-02T00:00:00.000Z',
+          pdfType: 'signed'
+        }
+
+        const mockServiceInstance = {
+          getDocumentPdfUrl: jest.fn().mockResolvedValue(mockPdfUrlResponse),
+        }
+
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: {},
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockServiceInstance.getDocumentPdfUrl).toHaveBeenCalledWith('doc-123', 'user-123', 3600)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          success: true,
+          data: mockPdfUrlResponse,
+          meta: {
+            timestamp: expect.any(String),
+          }
+        })
+      })
+
+      it('should use custom expiresInSeconds from query', async () => {
+        const mockPdfUrlResponse: PdfUrlResponse = {
+          documentId: 'doc-123',
+          url: 'https://example.com/signed-url',
+          expiresAt: '2025-01-02T00:00:00.000Z',
+          pdfType: 'original'
+        }
+
+        const mockServiceInstance = {
+          getDocumentPdfUrl: jest.fn().mockResolvedValue(mockPdfUrlResponse),
+        }
+
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: { expiresInSeconds: '7200' },
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockServiceInstance.getDocumentPdfUrl).toHaveBeenCalledWith('doc-123', 'user-123', 7200)
+      })
+
+      it('should return 400 when expiresInSeconds is too short', async () => {
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: { expiresInSeconds: '30' },
+          user: { id: 'user-123' },
+          documentService: {} as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockResponse.status).toHaveBeenCalledWith(400)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          error: 'expiresInSeconds must be between 60 and 86400 (1 minute to 24 hours)'
+        })
+      })
+
+      it('should return 400 when expiresInSeconds is too long', async () => {
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: { expiresInSeconds: '100000' },
+          user: { id: 'user-123' },
+          documentService: {} as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockResponse.status).toHaveBeenCalledWith(400)
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          error: 'expiresInSeconds must be between 60 and 86400 (1 minute to 24 hours)'
+        })
+      })
+
+      it('should return 404 when document not found', async () => {
+        const mockServiceInstance = {
+          getDocumentPdfUrl: jest.fn().mockRejectedValue(new Error('Document not found')),
+        }
+
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: {},
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockResponse.status).toHaveBeenCalledWith(404)
+        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Document not found' })
+      })
+
+      it('should handle generic errors with 500 status', async () => {
+        const mockServiceInstance = {
+          getDocumentPdfUrl: jest.fn().mockRejectedValue(new Error('Service error')),
+        }
+
+        mockRequest = {
+          params: { id: 'doc-123' },
+          query: {},
+          user: { id: 'user-123' },
+          documentService: mockServiceInstance as any,
+        } as any
+
+        await controller.getDocumentPdfUrl(mockRequest as Request, mockResponse as Response)
+
+        expect(mockResponse.status).toHaveBeenCalledWith(500)
+        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Service error' })
       })
     })
   })
@@ -167,7 +458,13 @@ describe('DocumentController', () => {
         payroll_period_end: '31-01-2025',
       })
       expect(mockResponse.status).toHaveBeenCalledWith(201)
-      expect(mockResponse.json).toHaveBeenCalledWith(mockUploadResponse)
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockUploadResponse,
+        meta: {
+          timestamp: expect.any(String),
+        }
+      })
     })
 
     it('should return 400 when PDF file is missing', async () => {
@@ -307,7 +604,13 @@ describe('DocumentController', () => {
         'Test Agent',
         'test@example.com'
       )
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Document signed successfully' })
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: { message: 'Document signed successfully' },
+        meta: {
+          timestamp: expect.any(String),
+        }
+      })
     })
 
     it('should return 404 when document not found', async () => {

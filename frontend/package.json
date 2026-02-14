@@ -1,11 +1,11 @@
 {
-  "name": "frontend",
+  "name": "crewops_frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "host": "vite --host",
+    "dev:lan": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
