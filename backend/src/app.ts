@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import documentRoutes from './routes/documentRoutes'
+import requestLogger from './middleware/requestLogger'
 
 const app = express()
 
@@ -24,7 +25,7 @@ app.use(
 )
 
 // Request logging
-app.use(require('./middleware/requestLogger'));
+app.use(requestLogger);
 
 /**
  * Body parser
