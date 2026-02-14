@@ -232,7 +232,7 @@ describe('DocumentAdminRepository', () => {
       // Set up the chain correctly: update() returns builder, then eq() returns { error: null }
       mockQueryBuilder.eq.mockResolvedValue({ error: null })
 
-      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).resolves.toBeUndefined()
+      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z', 'signed/user-123/doc-123.pdf')).resolves.toBeUndefined()
 
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_signatures')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('documents')
@@ -240,6 +240,7 @@ describe('DocumentAdminRepository', () => {
         status: 'SIGNED',
         signed_hash: 'signed_hash',
         signed_at: '2025-01-01T00:00:00Z',
+        pdf_signed_path: 'signed/user-123/doc-123.pdf',
       })
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'doc-123')
     })
@@ -248,7 +249,7 @@ describe('DocumentAdminRepository', () => {
       const error = new Error('Update failed')
       mockQueryBuilder.eq.mockResolvedValue({ error })
 
-      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z')).rejects.toThrow('Update failed')
+      await expect(repository.updateDocumentAsSigned('doc-123', 'signed_hash', '2025-01-01T00:00:00Z', 'signed/user-123/doc-123.pdf')).rejects.toThrow('Update failed')
     })
   })
 

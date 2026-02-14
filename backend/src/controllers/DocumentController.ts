@@ -186,7 +186,7 @@ export class DocumentController {
       console.error(`[DocumentController] signDocument: Error - ${error.message}`)
       const statusCode = error.message.includes('not found') ? 404 :
                         error.message.includes('already signed') ? 400 :
-                        error.message.includes('Authentication failed') ? 401 : 500
+                        error.message.includes('Authentication failed') || error.message.includes('Contraseña incorrecta') ? 401 : 500
       res.status(statusCode).json({ error: error.message })
     }
   }
