@@ -1,5 +1,11 @@
 import { createSupabaseAdminClient } from '../config/supabase'
-import { Document, SignatureData } from '../types'
+import {
+  Document,
+  DocumentStatus,
+  SignatureData,
+  ProfileEmployeeResult,
+  DocumentStatsResult
+} from '../types'
 
 /**
  * DocumentAdminRepository - Admin-context repository for document operations.
@@ -17,7 +23,7 @@ export class DocumentAdminRepository {
     return createSupabaseAdminClient()
   }
 
-  async checkUserExists(userId: string): Promise<{ employee_id: number } | null> {
+  async checkUserExists(userId: string): Promise<ProfileEmployeeResult | null> {
     const { data, error } = await this.supabaseClient
       .schema('ar_signatures')
       .from('profiles')
@@ -74,7 +80,7 @@ export class DocumentAdminRepository {
       .update({
         is_active: false,
         superseded_by: newDocumentId,
-        status: 'INVALIDATED' as const
+        status: 'INVALIDATED' as DocumentStatus
       })
       .eq('user_id', userId)
       .eq('payroll_period_start', payrollPeriodStart)
@@ -132,5 +138,53 @@ export class DocumentAdminRepository {
       throw error
     }
     console.log(`[DocumentAdminRepository] updateDocumentAsSigned: Updated document ${documentId} as signed with PDF path ${signedPdfPath}`)
+  }
+
+  /**
+   * Get document statistics for an employee.
+   * @param employeeId - The employee ID
+   */
+  async getEmployeeDocumentStats(employeeId: number): Promise<DocumentStatsResult> {
+    const { data: statsData, error: statsError } = await this.supabaseClient
+      .schema('ar_signatures')
+      .from('documents')
+      .select('status')
+      .eq('employee_id', employeeId)
+      .eq('is_active', true)
+
+    if (statsError) {
+      console.error('[DocumentAdminRepository] getEmployeeDocumentStats: Failed to get stats', { error: statsError.message, employeeId })
+      throw statsError
+    }
+
+    const pendingCount = statsData.filter(d => d.status === 'PENDING').length
+    const signedCount = statsData.filter(d => d.status === 'SIGNED').length
+
+    return { pendingCount, signedCount }
+  }
+
+  /**
+   * Get last N documents for an employee by status.
+   * @param employeeId - The employee ID
+   * @param status - Document status
+   * @param limit - Number of documents
+   */
+  async getEmployeeLastDocuments(employeeId: number, status: DocumentStatus, limit: number): Promise<Document[]> {
+    const { data, error } = await this.supabaseClient
+      .schema('ar_signatures')
+      .from('documents')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .eq('status', status)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('[DocumentAdminRepository] getEmployeeLastDocuments: Failed to get docs', { error: error.message, employeeId, status })
+      throw error
+    }
+
+    return data || []
   }
 }

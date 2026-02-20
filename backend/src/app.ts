@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import documentRoutes from './routes/documentRoutes'
+import employeeRoutes from './routes/employeeRoutes'
 import requestLogger from './middleware/requestLogger'
 
 const app = express()
@@ -38,5 +39,6 @@ app.get('/health', (_req, res) => {
 })
 
 app.use('/documents', documentRoutes)
+app.use('/employees', employeeRoutes)
 
 export default app

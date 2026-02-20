@@ -25,6 +25,8 @@ const mockSupabaseClient = {
   in: jest.fn().mockImplementation(
     (column: string, values: number[]) => getEmployeesBuilder.in(column, values)
   ),
+  order: jest.fn().mockReturnThis(),
+  range: jest.fn().mockReturnThis(),
 }
 
 const { createSupabaseUserClient } = require('../../src/config/supabase')
@@ -45,9 +47,12 @@ describe('EmployeeRepository', () => {
         name: 'John Doe',
         email: 'john.doe@example.com',
         identification_number: '123456789',
-        department: 'Engineering',
-        position: 'Software Engineer',
+        identification_type: 'CC',
         company_id: 1,
+        external_employee_id: 'EMP001',
+        external_provider_id: 'PROV001',
+        active: true,
+        created_at: '2024-01-01T00:00:00Z',
       }
       mockSupabaseClient.single.mockResolvedValue({ data: mockEmployee, error: null })
 
@@ -56,7 +61,7 @@ describe('EmployeeRepository', () => {
       expect(createSupabaseUserClient).toHaveBeenCalledWith('test-token')
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_nomina')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('employees')
-      expect(mockSupabaseClient.select).toHaveBeenCalledWith('id, name, email, identification_number, department, position, company_id')
+      expect(mockSupabaseClient.select).toHaveBeenCalledWith('id, name, email, identification_number, identification_type, company_id, external_employee_id, external_provider_id, active, created_at')
       expect(mockSupabaseClient.eq).toHaveBeenCalledWith('id', 456)
       expect(result).toEqual(mockEmployee)
     })
@@ -99,18 +104,22 @@ describe('EmployeeRepository', () => {
           name: 'John Doe',
           email: 'john.doe@example.com',
           identification_number: '123456789',
-          department: 'Engineering',
-          position: 'Software Engineer',
+          identification_type: 'CC',
           company_id: 1,
+          external_employee_id: 'EMP001',
+          external_provider_id: 'PROV001',
+          active: true,
         },
         {
           id: 789,
           name: 'Jane Smith',
           email: 'jane.smith@example.com',
           identification_number: '987654321',
-          department: 'Engineering',
-          position: 'Senior Engineer',
+          identification_type: 'CC',
           company_id: 1,
+          external_employee_id: 'EMP002',
+          external_provider_id: 'PROV001',
+          active: true,
         },
       ]
       mockSupabaseClient.in.mockResolvedValue({ data: mockEmployees, error: null })
@@ -120,7 +129,7 @@ describe('EmployeeRepository', () => {
       expect(createSupabaseUserClient).toHaveBeenCalledWith('test-token')
       expect(mockSupabaseClient.schema).toHaveBeenCalledWith('ar_nomina')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('employees')
-      expect(mockSupabaseClient.select).toHaveBeenCalledWith('id, name, email, identification_number, department, position, company_id')
+      expect(mockSupabaseClient.select).toHaveBeenCalledWith('id, name, email, identification_number, identification_type, company_id, external_employee_id, external_provider_id, active')
       expect(mockSupabaseClient.in).toHaveBeenCalledWith('id', [456, 789])
       expect(result).toEqual(mockEmployees)
     })

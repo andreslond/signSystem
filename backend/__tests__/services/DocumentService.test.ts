@@ -526,8 +526,8 @@ describe('DocumentService', () => {
           id: 'generated-doc-id',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period_start: '01-01-2025',
-          payroll_period_end: '01-31-2025',
+          payroll_period_start: '2025-01-01', // PostgreSQL YYYY-MM-DD format (returned by repo)
+          payroll_period_end: '2025-01-31', // PostgreSQL YYYY-MM-DD format (returned by repo)
           pdf_original_path: 'original/user-123/generated-doc-id.pdf',
           status: 'PENDING',
           original_hash: 'computed-hash',
@@ -549,14 +549,15 @@ describe('DocumentService', () => {
         pdf: Buffer.from('test pdf'),
         user_id: 'user-123',
         employee_id: 456,
-        payroll_period_start: '01-01-2025',
-        payroll_period_end: '31-01-2025',
+        payroll_period_start: '01-01-2025', // DD-MM-YYYY input format
+        payroll_period_end: '31-01-2025', // DD-MM-YYYY input format
       }
 
       const result = await DocumentService.uploadDocument(request)
 
       expect(mockAdminRepoInstance.checkUserExists).toHaveBeenCalledWith('user-123')
       expect(mockHashUtil.sha256).toHaveBeenCalledWith(Buffer.from('test pdf'))
+      // Dates are converted to PostgreSQL format (MM-DD-YYYY) for storage
       expect(mockAdminRepoInstance.checkIdempotency).toHaveBeenCalledWith('user-123', '01-01-2025', '01-31-2025', 'computed-hash')
       expect(mockUuidV4).toHaveBeenCalled()
       expect(mockGCSUtil.uploadPdf).toHaveBeenCalledWith('original/user-123/generated-doc-id.pdf', Buffer.from('test pdf'))
@@ -564,8 +565,8 @@ describe('DocumentService', () => {
       expect(result).toEqual({
         document_id: 'generated-doc-id',
         status: 'PENDING',
-        payroll_period_start: '01-01-2025',
-        payroll_period_end: '31-01-2025',
+        payroll_period_start: '01-01-2025', // Returned in DD-MM-YYYY format
+        payroll_period_end: '31-01-2025', // Returned in DD-MM-YYYY format
       })
     })
 
@@ -577,8 +578,8 @@ describe('DocumentService', () => {
           id: 'generated-doc-id',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period_start: '01-01-2025',
-          payroll_period_end: '01-31-2025',
+          payroll_period_start: '2025-01-01', // PostgreSQL YYYY-MM-DD format
+          payroll_period_end: '2025-01-31', // PostgreSQL YYYY-MM-DD format
           pdf_original_path: 'original/user-123/generated-doc-id.pdf',
           status: 'PENDING',
           original_hash: 'computed-hash',
@@ -621,8 +622,8 @@ describe('DocumentService', () => {
           id: 'existing-doc-id',
           user_id: 'user-123',
           employee_id: 456,
-          payroll_period_start: '01-01-2025',
-          payroll_period_end: '01-31-2025',
+          payroll_period_start: '2025-01-01', // PostgreSQL YYYY-MM-DD format
+          payroll_period_end: '2025-01-31', // PostgreSQL YYYY-MM-DD format
           pdf_original_path: 'original/user-123/existing-doc-id.pdf',
           status: 'PENDING',
           original_hash: 'computed-hash',
