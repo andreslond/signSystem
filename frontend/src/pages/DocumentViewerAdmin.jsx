@@ -80,9 +80,9 @@ export default function DocumentViewerAdmin() {
     // Handle back navigation - return to contractor detail
     const handleBack = () => {
         if (employeeId) {
-            navigate(`/dashboard/${employeeId}`);
+            navigate(`/signed-documents/${employeeId}`);
         } else {
-            navigate('/dashboard');
+            navigate('/signed-documents');
         }
     };
 

@@ -28,7 +28,7 @@ export default function AppLayout({ children, title }) {
     }, [isDarkMode]);
 
     const navItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+        { id: 'dashboard', label: 'Documentos firmados', icon: LayoutDashboard, path: '/signed-documents' },
         { id: 'cuentas', label: 'Mis Cuentas', icon: Briefcase, path: '/documents/pending', active: true },
         { id: 'perfil', label: 'Mi Perfil', icon: User, path: '#' },
     ];

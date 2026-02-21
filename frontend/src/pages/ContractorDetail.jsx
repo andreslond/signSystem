@@ -87,7 +87,7 @@ export default function ContractorDetail() {
                         {error?.message || 'No se encontró el contratista'}
                     </p>
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/signed-documents')}
                         className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
                     >
                         Volver a la lista
@@ -107,7 +107,7 @@ export default function ContractorDetail() {
                 <div className="sticky top-0 z-10 bg-surface dark:bg-surface-alt border-b border-gray-100 dark:border-gray-800">
                     <div className="px-4 py-3 flex items-center gap-3">
                         <button
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate('/signed-documents')}
                             className="flex size-10 items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                         >
                             <ArrowLeft size={20} />

@@ -83,8 +83,8 @@ describe('DocumentViewerAdmin Page', () => {
         return renderWithTheme(
             <Routes>
                 <Route path="/documents/admin/:id" element={<DocumentViewerAdmin />} />
-                <Route path="/dashboard/:id" element={<div>Contractor Detail</div>} />
-                <Route path="/dashboard" element={<div>Dashboard</div>} />
+                <Route path="/signed-documents/:id" element={<div>Contractor Detail</div>} />
+                <Route path="/signed-documents" element={<div>Dashboard</div>} />
             </Routes>,
             { initialEntries }
         );

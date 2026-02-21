@@ -5,7 +5,7 @@ import DocumentListPending from './pages/DocumentListPending';
 import DocumentViewerPending from './pages/DocumentViewerPending';
 import DocumentListSigned from './pages/DocumentListSigned';
 import DocumentViewerSigned from './pages/DocumentViewerSigned';
-import AccountsSigningDashboard from './pages/AccountsSigningDashboard';
+import ContractorSigningDashboard from './pages/ContractorSigningDashboard';
 import ContractorDetail from './pages/ContractorDetail';
 import DocumentViewerAdmin from './pages/DocumentViewerAdmin';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -74,17 +74,17 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/dashboard"
+        path="/signed-documents"
         element={
           <ProtectedRoute>
             <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
-              <AccountsSigningDashboard />
+              <ContractorSigningDashboard />
             </ErrorBoundary>
           </ProtectedRoute>
         }
       />
       <Route
-        path="/dashboard/:id"
+        path="/signed-documents/:id"
         element={
           <ProtectedRoute>
             <ErrorBoundary showErrorDetails={import.meta.env.DEV}>

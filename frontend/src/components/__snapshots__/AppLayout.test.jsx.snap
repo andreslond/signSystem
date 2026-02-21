@@ -214,7 +214,7 @@ exports[`AppLayout Component > matches snapshot 1`] = `
               <span
                 class="text-base"
               >
-                Dashboard
+                Documentos firmados
               </span>
             </button>
             <button
