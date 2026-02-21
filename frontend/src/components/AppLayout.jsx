@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, Home, Briefcase, User, Settings, Menu, X, Sun, Moon, LogOut } from 'lucide-react';
+import { Bell, Home, Briefcase, User, Settings, Menu, X, Sun, Moon, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AppLayout({ children, title }) {
@@ -28,7 +28,7 @@ export default function AppLayout({ children, title }) {
     }, [isDarkMode]);
 
     const navItems = [
-        { id: 'inicio', label: 'Inicio', icon: Home, path: '/documents/pending' },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
         { id: 'cuentas', label: 'Mis Cuentas', icon: Briefcase, path: '/documents/pending', active: true },
         { id: 'perfil', label: 'Mi Perfil', icon: User, path: '#' },
     ];
@@ -61,8 +61,8 @@ export default function AppLayout({ children, title }) {
                 </button>
             </header>
 
-            {/* Content Area */}
-            <main className="flex-1 max-w-[440px] w-full mx-auto">
+            {/* Content Area - Responsive: mobile max-width, desktop full width */}
+            <main className="flex-1 w-full mx-auto">
                 {children}
             </main>
 

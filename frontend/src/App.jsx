@@ -5,6 +5,9 @@ import DocumentListPending from './pages/DocumentListPending';
 import DocumentViewerPending from './pages/DocumentViewerPending';
 import DocumentListSigned from './pages/DocumentListSigned';
 import DocumentViewerSigned from './pages/DocumentViewerSigned';
+import AccountsSigningDashboard from './pages/AccountsSigningDashboard';
+import ContractorDetail from './pages/ContractorDetail';
+import DocumentViewerAdmin from './pages/DocumentViewerAdmin';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Users } from 'lucide-react';
 
@@ -34,9 +37,7 @@ const AppRoutes = () => {
         path="/documents/pending"
         element={
           <ProtectedRoute>
-            <ErrorBoundary
-              showErrorDetails={import.meta.env.DEV}
-            >
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
               <DocumentListPending />
             </ErrorBoundary>
           </ProtectedRoute>
@@ -46,9 +47,7 @@ const AppRoutes = () => {
         path="/documents/pending/:id"
         element={
           <ProtectedRoute>
-            <ErrorBoundary
-              showErrorDetails={import.meta.env.DEV}
-            >
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
               <DocumentViewerPending />
             </ErrorBoundary>
           </ProtectedRoute>
@@ -58,9 +57,7 @@ const AppRoutes = () => {
         path="/documents/signed"
         element={
           <ProtectedRoute>
-            <ErrorBoundary
-              showErrorDetails={import.meta.env.DEV}
-            >
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
               <DocumentListSigned />
             </ErrorBoundary>
           </ProtectedRoute>
@@ -70,10 +67,38 @@ const AppRoutes = () => {
         path="/documents/signed/:id"
         element={
           <ProtectedRoute>
-            <ErrorBoundary
-              showErrorDetails={import.meta.env.DEV}
-            >
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
               <DocumentViewerSigned />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+              <AccountsSigningDashboard />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/:id"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+              <ContractorDetail />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/documents/admin/:id"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+              <DocumentViewerAdmin />
             </ErrorBoundary>
           </ProtectedRoute>
         }
