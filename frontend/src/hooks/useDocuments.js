@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchDocuments, ApiError, fetchDocumentById } from '../lib/apiClient';
+import { fetchDocuments, ApiError, fetchDocumentById, fetchAdminDocumentById } from '../lib/apiClient';
 import { NetworkError } from '../utils/errors';
 import { logAppError } from '../utils/errorHandlers';
 
@@ -330,6 +330,129 @@ export function useDocument(documentId) {
       const isNetworkError = err instanceof NetworkError;
       if (!isNetworkError) {
         logAppError('useDocument:refetch', err);
+      }
+      
+      setError({
+        message: err.message || 'Error al cargar el documento',
+        statusCode: err.statusCode || 0,
+        isNetworkError,
+        code: err.code || 'UNKNOWN_ERROR',
+      });
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  }, [documentId]);
+
+  return {
+    document,
+    loading,
+    error,
+    success,
+    refetch,
+  };
+}
+
+/**
+ * Hook for fetching a single document by ID with admin access (for leader users)
+ * This bypasses the ownership check and allows viewing any document
+ */
+export function useAdminDocument(documentId) {
+  const [document, setDocument] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const isMounted = useRef(true);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    isMounted.current = true;
+    requestId.current = 0;
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!documentId) {
+      setError(new Error('Document ID is required'));
+      setLoading(false);
+      return;
+    }
+
+    const fetchDocument = async () => {
+      const currentRequestId = ++requestId.current;
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+
+      try {
+        const response = await fetchAdminDocumentById(documentId);
+        
+        if (currentRequestId !== requestId.current) return;
+        if (!isMounted.current) return;
+        
+        const documentData = response?.data || response?.document || response;
+        setDocument(documentData);
+        setSuccess(true);
+      } catch (err) {
+        if (currentRequestId !== requestId.current) return;
+        if (!isMounted.current) return;
+        
+        // Network errors should not cause redirects
+        const isNetworkError = err instanceof NetworkError;
+        
+        if (!isNetworkError) {
+          logAppError('useAdminDocument:fetchDocument', err);
+        }
+        
+        setError({
+          message: err.message || 'Error al cargar el documento',
+          statusCode: err.statusCode || 0,
+          isNetworkError,
+          code: err.code || 'UNKNOWN_ERROR',
+        });
+        setDocument(null);
+        
+        if (!isNetworkError) {
+          setSuccess(false);
+        }
+      } finally {
+        if (currentRequestId === requestId.current && isMounted.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDocument();
+  }, [documentId]);
+
+  const refetch = useCallback(async () => {
+    if (!documentId) return;
+    
+    requestId.current++;
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    if (isMounted.current) {
+      setLoading(true);
+    }
+    
+    try {
+      const response = await fetchAdminDocumentById(documentId);
+      if (isMounted.current) {
+        const documentData = response?.data || response?.document || response;
+        setDocument(documentData);
+        setSuccess(true);
+      }
+    } catch (err) {
+      if (!isMounted.current) return;
+      
+      const isNetworkError = err instanceof NetworkError;
+      if (!isNetworkError) {
+        logAppError('useAdminDocument:refetch', err);
       }
       
       setError({

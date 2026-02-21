@@ -42,6 +42,17 @@ router.get('/:id', authMiddleware, createUserService, (req, res) => {
   return controller.getDocumentById(req, res)
 })
 
+// Admin routes for leader users (can view any document)
+router.get('/admin/:id', authMiddleware, createUserService, (req, res) => {
+  const controller = getDocumentController()
+  return controller.getAdminDocumentById(req, res)
+})
+
+router.get('/admin/:id/pdf-url', authMiddleware, createUserService, (req, res) => {
+  const controller = getDocumentController()
+  return controller.getAdminDocumentPdfUrl(req, res)
+})
+
 router.get('/:id/pdf-url', authMiddleware, createUserService, (req, res) => {
   const controller = getDocumentController()
   return controller.getDocumentPdfUrl(req, res)

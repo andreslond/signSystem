@@ -124,6 +124,62 @@ export class DocumentController {
   }
 
   /**
+   * GET /documents/admin/:id
+   * Get any document by ID (admin access for leader users)
+   */
+  getAdminDocumentById = async (req: Request, res: Response) => {
+    try {
+      const document = await req.documentService.getAdminDocument(req.params.id as string)
+      if (!document) {
+        console.log(`[DocumentController] getAdminDocumentById: Document ${req.params.id} not found`)
+        return res.status(404).json({ error: 'Document not found' })
+      }
+      console.log(`[DocumentController] getAdminDocumentById: Retrieved document ${req.params.id} for admin user ${req.user.id}`)
+      
+      return sendSuccess(res, document)
+    } catch (error: any) {
+      console.error(`[DocumentController] getAdminDocumentById: Error - ${error.message}`)
+      res.status(500).json({ error: error.message })
+    }
+  }
+
+  /**
+   * GET /documents/admin/:id/pdf-url
+   * Get PDF URL for any document (admin access for leader users)
+   */
+  getAdminDocumentPdfUrl = async (req: Request, res: Response) => {
+    try {
+      const expiresInSeconds = req.query.expiresInSeconds 
+        ? parseInt(req.query.expiresInSeconds as string, 10) 
+        : 3600
+
+      if (isNaN(expiresInSeconds) || expiresInSeconds < 60 || expiresInSeconds > 86400) {
+        return res.status(400).json({ 
+          error: 'expiresInSeconds must be between 60 and 86400 (1 minute to 24 hours)' 
+        })
+      }
+
+      console.log(`[DocumentController] getAdminDocumentPdfUrl: Generating PDF URL for document ${req.params.id}`)
+
+      const pdfUrlResponse = await req.documentService.getAdminDocumentPdfUrl(
+        req.params.id as string,
+        expiresInSeconds
+      )
+
+      console.log(`[DocumentController] getAdminDocumentPdfUrl: Generated ${pdfUrlResponse.pdfType} PDF URL for document ${req.params.id}`)
+
+      return sendSuccess(res, pdfUrlResponse)
+    } catch (error: any) {
+      console.error(`[DocumentController] getAdminDocumentPdfUrl: Error - ${error.message}`)
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ error: error.message })
+      }
+      res.status(500).json({ error: error.message })
+    }
+  }
+
+  /**
    * GET /documents/:id/pdf-url
    * Get a signed URL for viewing/downloading the PDF document
    */
@@ -194,7 +250,7 @@ export class DocumentController {
   uploadDocument = async (req: Request, res: Response) => {
     try {
       // Validate required fields
-      const { user_id, employee_id, payroll_period_start, payroll_period_end } = req.body
+      const { user_id, employee_id, payroll_period_start, payroll_period_end, amount } = req.body
       const pdfFile = (req as any).file
 
       if (!pdfFile || !pdfFile.buffer) {
@@ -215,7 +271,8 @@ export class DocumentController {
         user_id,
         employee_id: parseInt(employee_id, 10),
         payroll_period_start,
-        payroll_period_end
+        payroll_period_end,
+        amount
       }
 
       console.log(`[DocumentController] uploadDocument: Processing upload for user ${user_id}, period ${payroll_period_start} to ${payroll_period_end}`)

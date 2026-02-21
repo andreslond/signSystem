@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, Home, Briefcase, User, Settings, Menu, X, Sun, Moon, LogOut } from 'lucide-react';
+import { Bell, Home, Briefcase, User, Settings, Menu, X, Sun, Moon, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AppLayout({ children, title }) {
@@ -28,10 +28,19 @@ export default function AppLayout({ children, title }) {
     }, [isDarkMode]);
 
     const navItems = [
-        { id: 'inicio', label: 'Inicio', icon: Home, path: '/documents/pending' },
-        { id: 'cuentas', label: 'Mis Cuentas', icon: Briefcase, path: '/documents/pending', active: true },
+        { id: 'dashboard', label: 'Documentos firmados', icon: LayoutDashboard, path: '/signed-documents' },
+        { id: 'cuentas', label: 'Mis Cuentas', icon: Briefcase, path: '/documents/pending' },
         { id: 'perfil', label: 'Mi Perfil', icon: User, path: '#' },
     ];
+
+    // Determine active item based on current location
+    const getActiveItem = (path) => {
+        if (path === '#') return false;
+        if (path === '/signed-documents') {
+            return location.pathname === '/signed-documents';
+        }
+        return location.pathname.startsWith(path);
+    };
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
@@ -61,8 +70,8 @@ export default function AppLayout({ children, title }) {
                 </button>
             </header>
 
-            {/* Content Area */}
-            <main className="flex-1 max-w-[440px] w-full mx-auto">
+            {/* Content Area - Responsive: mobile max-width, desktop full width */}
+            <main className="flex-1 w-full mx-auto">
                 {children}
             </main>
 
@@ -110,12 +119,12 @@ export default function AppLayout({ children, title }) {
                             }}
                             className={`
                                 w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200
-                                ${item.active
+                                ${getActiveItem(item.path)
                                     ? 'bg-primary/5 text-primary font-bold'
                                     : 'hover:bg-surface dark:hover:bg-surface-alt text-text-secondary'}
                             `}
                         >
-                            <item.icon size={22} strokeWidth={item.active ? 2.5 : 2} />
+                            <item.icon size={22} strokeWidth={getActiveItem(item.path) ? 2.5 : 2} />
                             <span className="text-base">{item.label}</span>
                         </button>
                     ))}

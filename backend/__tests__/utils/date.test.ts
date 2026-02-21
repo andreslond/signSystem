@@ -28,11 +28,11 @@ describe('DateUtil', () => {
   })
 
   describe('fromPostgresFormat', () => {
-    it('should convert MM-DD-YYYY to DD-MM-YYYY', () => {
-      expect(DateUtil.fromPostgresFormat('01-01-2025')).toBe('01-01-2025')
-      expect(DateUtil.fromPostgresFormat('01-31-2025')).toBe('31-01-2025')
-      expect(DateUtil.fromPostgresFormat('03-15-2025')).toBe('15-03-2025')
-      expect(DateUtil.fromPostgresFormat('12-10-2025')).toBe('10-12-2025')
+    it('should convert YYYY-MM-DD (PostgreSQL) to DD-MM-YYYY', () => {
+      expect(DateUtil.fromPostgresFormat('2025-01-01')).toBe('01-01-2025')
+      expect(DateUtil.fromPostgresFormat('2025-01-31')).toBe('31-01-2025')
+      expect(DateUtil.fromPostgresFormat('2025-03-15')).toBe('15-03-2025')
+      expect(DateUtil.fromPostgresFormat('2025-12-10')).toBe('10-12-2025')
     })
 
     it('should throw error for invalid format', () => {
@@ -43,9 +43,9 @@ describe('DateUtil', () => {
     })
 
     it('should throw error for invalid date (fake dates)', () => {
-      expect(() => DateUtil.fromPostgresFormat('99-99-2025')).toThrow('Invalid date')
-      expect(() => DateUtil.fromPostgresFormat('32-01-2025')).toThrow('Invalid date')
-      expect(() => DateUtil.fromPostgresFormat('13-01-2025')).toThrow('Invalid date')
+      expect(() => DateUtil.fromPostgresFormat('2025-99-99')).toThrow('Invalid date')
+      expect(() => DateUtil.fromPostgresFormat('2025-32-01')).toThrow('Invalid date')
+      expect(() => DateUtil.fromPostgresFormat('2025-13-01')).toThrow('Invalid date')
     })
   })
 })

@@ -152,13 +152,13 @@ async function handleAuthFailure() {
  */
 function buildQueryString(params) {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       searchParams.append(key, String(value));
     }
   });
-  
+
   return searchParams.toString();
 }
 
@@ -174,10 +174,10 @@ function buildQueryString(params) {
  */
 async function request(endpoint, { method = HttpMethod.GET, body = null, headers = {} } = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   // Get the access token
   const token = await getAccessToken();
-  
+
   if (!token) {
     // No token found - this is an auth failure, but don't logout
     // This could mean user is not logged in yet
@@ -214,7 +214,7 @@ async function request(endpoint, { method = HttpMethod.GET, body = null, headers
     // Parse response
     const contentType = response.headers.get('content-type');
     let data;
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
@@ -358,7 +358,7 @@ export async function fetchDocumentPdfUrl(documentId, expiresInSeconds = 3600) {
   const params = {
     expiresInSeconds: Math.max(60, Math.min(expiresInSeconds, 86400)),
   };
-  
+
   return get(`/documents/${documentId}/pdf-url`, params);
 }
 
@@ -376,7 +376,7 @@ export async function fetchDocuments({ status, page = PaginationParams.defaultPa
     page,
     limit: Math.min(limit, PaginationParams.maxLimit),
   };
-  
+
   return get('/documents', params);
 }
 
@@ -405,6 +405,66 @@ export async function signDocument(documentId, password, fullName, identificatio
   });
 }
 
+/**
+ * Fetch employees with pagination and optional search
+ * @param {Object} params - Query parameters
+ * @param {number} params.page - Page number (1-indexed, default: 1)
+ * @param {number} params.limit - Items per page (default: 10, max: 50)
+ * @param {string} params.search - Search query
+ * @returns {Promise<Object>} Response with data and pagination metadata
+ */
+export async function fetchEmployees({ page = PaginationParams.defaultPage, limit = PaginationParams.defaultLimit, search = '' } = {}) {
+  const params = {
+    page,
+    limit: Math.min(limit, PaginationParams.maxLimit),
+    search: search || undefined
+  };
+
+  return get('/employees', params);
+}
+
+/**
+ * Fetch a single employee by ID
+ * @param {number} employeeId - Employee ID
+ * @returns {Promise<Object>} Employee data
+ */
+export async function fetchEmployeeById(employeeId) {
+  return get(`/employees/${employeeId}`);
+}
+
+/**
+ * Update employee details
+ * @param {number} employeeId - Employee ID
+ * @param {Object} data - Data to update
+ * @returns {Promise<Object>} Updated employee data
+ */
+export async function updateEmployee(employeeId, data) {
+  return put(`/employees/${employeeId}`, data);
+}
+
+/**
+ * Fetch any document by ID (admin access for leader users)
+ * @param {string} documentId - Document ID
+ * @returns {Promise<Object>} Document data
+ */
+export async function fetchAdminDocumentById(documentId) {
+  return get(`/documents/admin/${documentId}`);
+}
+
+/**
+ * Fetch PDF URL for any document (admin access for leader users)
+ * @param {string} documentId - Document ID
+ * @param {number} expiresInSeconds - URL expiration time in seconds (default: 3600)
+ * @returns {Promise<Object>} Response with pdfUrl, expiresAt, and pdfType
+ */
+export async function fetchAdminDocumentPdfUrl(documentId, expiresInSeconds = 3600) {
+  const params = {
+    expiresInSeconds: Math.max(60, Math.min(expiresInSeconds, 86400)),
+  };
+
+  return get(`/documents/admin/${documentId}/pdf-url`, params);
+}
+
 export const apiClient = {
   get,
   post,
@@ -416,6 +476,9 @@ export const apiClient = {
   fetchDocumentById,
   fetchDocumentPdfUrl,
   signDocument,
+  fetchEmployees,
+  fetchEmployeeById,
+  updateEmployee,
   HttpMethod,
   ApiError,
   ApiResponseFormat,

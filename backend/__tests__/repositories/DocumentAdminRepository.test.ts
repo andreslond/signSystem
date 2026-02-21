@@ -14,6 +14,7 @@ const createChainableMock = () => {
   builder.insert = jest.fn().mockReturnValue(builder)
   builder.update = jest.fn().mockReturnValue(builder)
   builder.eq = jest.fn().mockReturnValue(builder)
+  builder.neq = jest.fn().mockReturnValue(builder)
   builder.single = jest.fn()
   return builder
 }
@@ -38,6 +39,7 @@ describe('DocumentAdminRepository', () => {
     mockQueryBuilder.insert.mockReturnValue(mockQueryBuilder)
     mockQueryBuilder.update.mockReturnValue(mockQueryBuilder)
     mockQueryBuilder.eq.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.neq.mockReturnValue(mockQueryBuilder)
     mockQueryBuilder.single.mockResolvedValue({ data: null, error: null })
     repository = new DocumentAdminRepository()
   })
@@ -255,12 +257,14 @@ describe('DocumentAdminRepository', () => {
 
   describe('supersedeOldDocuments', () => {
     it('should update old documents as superseded', async () => {
-      // Set up the chain: update() returns builder, then each eq() returns builder, last eq() returns resolved promise
+      // Set up the chain: update() returns builder, then each eq() returns builder, last neq() returns resolved promise
       mockQueryBuilder.eq
         .mockReturnValueOnce(mockQueryBuilder)  // user_id
         .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_start
         .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_end
-        .mockResolvedValueOnce({ error: null }) // is_active (last one)
+        .mockReturnValueOnce(mockQueryBuilder)  // is_active
+      
+      mockQueryBuilder.neq.mockResolvedValueOnce({ error: null })
 
       await expect(repository.supersedeOldDocuments('user-123', '01-01-2025', '31-01-2025', 'new-doc-id')).resolves.toBeUndefined()
 
@@ -275,15 +279,18 @@ describe('DocumentAdminRepository', () => {
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_start', '01-01-2025')
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('payroll_period_end', '31-01-2025')
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('is_active', true)
+      expect(mockQueryBuilder.neq).toHaveBeenCalledWith('id', 'new-doc-id')
     })
 
     it('should not throw error on database error (non-critical operation)', async () => {
-      // Set up the chain with error on last eq() call
+      // Set up the chain with error on neq() call
       mockQueryBuilder.eq
         .mockReturnValueOnce(mockQueryBuilder)  // user_id
         .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_start
         .mockReturnValueOnce(mockQueryBuilder)  // payroll_period_end
-        .mockResolvedValueOnce({ error: new Error('Update failed') }) // is_active (last one)
+        .mockReturnValueOnce(mockQueryBuilder)  // is_active
+      
+      mockQueryBuilder.neq.mockResolvedValueOnce({ error: new Error('Update failed') })
 
       // supersedeOldDocuments does not throw - it logs a warning
       await expect(repository.supersedeOldDocuments('user-123', '01-01-2025', '31-01-2025', 'new-doc-id')).resolves.toBeUndefined()

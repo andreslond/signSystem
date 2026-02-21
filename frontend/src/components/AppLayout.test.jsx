@@ -31,7 +31,9 @@ describe('AppLayout Component', () => {
             </AppLayout>
         );
 
-        expect(screen.getByText('Dashboard')).toBeInTheDocument();
+        // Use getAllByText since 'Dashboard' appears in both header and nav
+        const dashboardElements = screen.getAllByText('Dashboard');
+        expect(dashboardElements.length).toBeGreaterThan(0);
         expect(screen.getByTestId('child')).toBeInTheDocument();
     });
 
