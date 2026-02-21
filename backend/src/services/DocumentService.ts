@@ -87,6 +87,120 @@ export class DocumentService {
   }
 
   /**
+   * Get any document by ID (admin access - no ownership check).
+   * Used by leader users who need to view all documents.
+   * @param documentId - The document ID
+   */
+  async getAdminDocument(documentId: string): Promise<Document | null> {
+    const supabase = createSupabaseAdminClient()
+    
+    // Get the document
+    const { data: documentData, error: docError } = await supabase
+      .schema('ar_signatures')
+      .from('documents')
+      .select('*')
+      .eq('id', documentId)
+      .single()
+    
+    if (docError) {
+      if (docError.code === 'PGRST116') return null
+      console.error('[DocumentService] getAdminDocument: Failed to get document', { error: docError.message, documentId })
+      throw docError
+    }
+    
+    // If document has employee_id, fetch employee data separately
+    if (documentData && documentData.employee_id) {
+      const { data: employeeData, error: empError } = await supabase
+        .schema('ar_nomina')
+        .from('employees')
+        .select('name, email, identification_number, identification_type')
+        .eq('id', documentData.employee_id)
+        .single()
+      
+      if (!empError && employeeData) {
+        documentData.employee_name = employeeData.name
+        documentData.employee_email = employeeData.email
+        documentData.employee_identification_number = employeeData.identification_number
+        documentData.employee_identification_type = employeeData.identification_type
+      }
+    }
+    
+    // If document is signed, fetch signature data to get signer name
+    if (documentData && documentData.status === 'SIGNED') {
+      const { data: signatureData, error: sigError } = await supabase
+        .schema('ar_signatures')
+        .from('signatures')
+        .select('name, identification_number, identification_type')
+        .eq('document_id', documentId)
+        .order('signed_at', { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (!sigError && signatureData) {
+        documentData.signer_name = signatureData.name
+        documentData.signer_identification = signatureData.identification_number
+        documentData.signer_identification_type = signatureData.identification_type
+      }
+    }
+    
+    return documentData
+  }
+
+  /**
+   * Get a signed URL for any document's PDF (admin access - no ownership check).
+   * Used by leader users who need to view all documents.
+   * @param documentId - The document ID
+   * @param expiresInSeconds - URL expiration time in seconds
+   */
+  async getAdminDocumentPdfUrl(
+    documentId: string,
+    expiresInSeconds: number = 3600
+  ): Promise<PdfUrlResponse> {
+    // 1. Get document using admin repository (RLS-bypassed)
+    const document = await this.getAdminDocument(documentId)
+    if (!document) {
+      throw new Error('Document not found')
+    }
+
+    // 2. If document is signed, return the signed PDF
+    if (document.status === 'SIGNED') {
+      if (!document.pdf_signed_path) {
+        console.error(`[DocumentService] getAdminDocumentPdfUrl: Document ${documentId} is marked as SIGNED but has no signed PDF path`)
+        throw new Error('Document is signed but signed PDF is not available')
+      }
+      
+      const url = await GCSUtil.getSignedUrl(document.pdf_signed_path, expiresInSeconds)
+      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+      
+      return {
+        documentId,
+        url,
+        expiresAt,
+        pdfType: 'signed'
+      }
+    }
+
+    // 3. For non-signed documents, return the original PDF
+    const pdfPath = document.pdf_original_path
+    const pdfType = 'original'
+
+    console.log(`[DocumentService] getAdminDocumentPdfUrl: Generating ${pdfType} PDF URL for document ${documentId}`)
+
+    // 4. Generate signed URL for the PDF
+    const url = await GCSUtil.getSignedUrl(pdfPath, expiresInSeconds)
+
+    // 5. Calculate expiration timestamp
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
+
+    return {
+      documentId,
+      url,
+      expiresAt,
+      pdfType
+    }
+  }
+
+  /**
    * Get a signed URL for a document's PDF.
    * Returns signed URL for the signed PDF if document is signed, otherwise returns original PDF URL.
    * 
