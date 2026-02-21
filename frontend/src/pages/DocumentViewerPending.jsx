@@ -341,7 +341,7 @@ export default function DocumentViewerPending() {
                         <div className="bg-surface-alt dark:bg-surface-alt p-4 rounded-2xl border border-border dark:border-border-light">
                             <div className="flex items-center gap-3 mb-3">
                                 <User size={18} className="text-primary" />
-                                <span className="text-sm font-medium text-text-secondary">Información del Empleado</span>
+                                <span className="text-sm font-medium text-text-secondary">Información del colaborador</span>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex flex-col gap-1">

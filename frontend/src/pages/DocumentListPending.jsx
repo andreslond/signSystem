@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, History, Clock, AlertCircle, WifiOff } from 'lucide-react';
 import DocumentCard from '../components/DocumentCard';
@@ -58,11 +58,28 @@ export default function DocumentListPending() {
         subtitle: doc.payroll_period_start && doc.payroll_period_end
             ? `${formatDateForDisplay(doc.payroll_period_start)} - ${formatDateForDisplay(doc.payroll_period_end)}`
             : doc.subtitle || doc.description || 'Sin período',
-        amount: doc.amount ? `${Number(doc.amount).toLocaleString()}` : null,
+        amount: doc.amount != null ? Number(doc.amount) : null,
         type: doc.type || 'receipt',
         status: doc.status,
         document: doc,
+        deadline: doc.deadline,
     });
+
+    // Filter documents based on search query
+    const filteredDocuments = useMemo(() => {
+        if (!searchQuery.trim()) return documents;
+        
+        const query = searchQuery.toLowerCase().trim();
+        return documents.filter((doc) => {
+            const title = 'Cuenta de Cobro'.toLowerCase();
+            const period = doc.payroll_period_start && doc.payroll_period_end
+                ? `${formatDateForDisplay(doc.payroll_period_start)} - ${formatDateForDisplay(doc.payroll_period_end)}`.toLowerCase()
+                : '';
+            const amount = doc.amount ? `${Number(doc.amount).toLocaleString()}`.toLowerCase() : '';
+            
+            return title.includes(query) || period.includes(query) || amount.includes(query);
+        });
+    }, [documents, searchQuery]);
 
     const handleRetry = () => {
         refetch();
@@ -158,7 +175,7 @@ export default function DocumentListPending() {
 
     return (
         <AppLayout title="Mis Cuentas">
-            <div className="px-6 py-6 flex flex-col gap-6">
+            <div className="px-4 md:px-6 py-6 flex flex-col gap-6 max-w-5xl mx-auto">
                 {/* Segmented Control */}
                 <SegmentedControl
                     options={statusOptions}
@@ -217,14 +234,17 @@ export default function DocumentListPending() {
                 )}
 
                 {/* Documents List */}
-                {!loading && !isEmpty && !error && documents.length > 0 && (
+                {!loading && !isEmpty && !error && filteredDocuments.length > 0 && (
                     <>
                         <div className="flex flex-col gap-4">
                             <h2 className="text-[13px] font-bold text-text-muted uppercase tracking-wider px-1 transition-colors">
-                                {pagination.total} documento{pagination.total !== 1 ? 's' : ''}
+                                {searchQuery.trim() 
+                                    ? `${filteredDocuments.length} de ${pagination.total} documento${pagination.total !== 1 ? 's' : ''}`
+                                    : `${pagination.total} documento${pagination.total !== 1 ? 's' : ''}`
+                                }
                             </h2>
                             <div className="flex flex-col gap-4">
-                                {documents.map((doc) => {
+                                {filteredDocuments.map((doc) => {
                                     const cardData = transformDocument(doc);
                                     return (
                                         <DocumentCard
@@ -234,6 +254,7 @@ export default function DocumentListPending() {
                                             amount={cardData.amount}
                                             status={cardData.status}
                                             type={cardData.type}
+                                            deadline={cardData.deadline}
                                             onClick={() => navigate(`/documents/pending/${cardData.id}`)}
                                         />
                                     );
@@ -241,8 +262,8 @@ export default function DocumentListPending() {
                             </div>
                         </div>
 
-                        {/* Pagination */}
-                        {pagination.totalPages > 1 && (
+                        {/* Pagination - only show when not searching */}
+                        {pagination.totalPages > 1 && !searchQuery.trim() && (
                             <SimplePagination
                                 page={pagination.page}
                                 totalPages={pagination.totalPages}
@@ -251,6 +272,21 @@ export default function DocumentListPending() {
                             />
                         )}
                     </>
+                )}
+
+                {/* No Search Results */}
+                {!loading && !isEmpty && !error && searchQuery.trim() && filteredDocuments.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+                            <Search size={24} className="text-gray-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            No se encontraron resultados
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            Intenta con otro término de búsqueda
+                        </p>
+                    </div>
                 )}
 
                 {/* Info Footer */}

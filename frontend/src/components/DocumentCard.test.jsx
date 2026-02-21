@@ -7,8 +7,8 @@ describe('DocumentCard Component', () => {
     const props = {
         title: 'Work Authorization',
         subtitle: 'Valid until Dec 2023',
-        amount: '$1,200',
-        status: 'pending',
+        amount: 1200,
+        status: 'PENDING',
         onClick: vi.fn(),
     };
 
@@ -16,7 +16,8 @@ describe('DocumentCard Component', () => {
         renderWithTheme(<DocumentCard {...props} />);
         expect(screen.getByText(props.title)).toBeInTheDocument();
         expect(screen.getByText(props.subtitle)).toBeInTheDocument();
-        expect(screen.getByText(props.amount)).toBeInTheDocument();
+        // Amount is formatted as COP currency with space and dot separator
+        expect(screen.getByText('$ 1.200')).toBeInTheDocument();
         expect(screen.getByText('Pendiente')).toBeInTheDocument();
     });
 
