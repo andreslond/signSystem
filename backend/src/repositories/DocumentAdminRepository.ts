@@ -74,6 +74,8 @@ export class DocumentAdminRepository {
    * with the same user_id and period range
    */
   async supersedeOldDocuments(userId: string, payrollPeriodStart: string, payrollPeriodEnd: string, newDocumentId: string): Promise<void> {
+    console.log(`[DocumentAdminRepository] supersedeOldDocuments: Searching for documents to supersede - userId=${userId}, periodStart=${payrollPeriodStart}, periodEnd=${payrollPeriodEnd}, newDocumentId=${newDocumentId}`)
+    
     const { error } = await this.supabaseClient
       .schema('ar_signatures')
       .from('documents')
@@ -86,6 +88,7 @@ export class DocumentAdminRepository {
       .eq('payroll_period_start', payrollPeriodStart)
       .eq('payroll_period_end', payrollPeriodEnd)
       .eq('is_active', true)
+      .neq('id', newDocumentId) // Exclude the new document itself
 
     if (error) {
       console.warn(`[DocumentAdminRepository] supersedeOldDocuments: Could not update old documents - ${error.message}`)
@@ -138,6 +141,16 @@ export class DocumentAdminRepository {
       throw error
     }
     console.log(`[DocumentAdminRepository] updateDocumentAsSigned: Updated document ${documentId} as signed with PDF path ${signedPdfPath}`)
+  }
+
+  async updateDocumentPath(documentId: string, pdfPath: string): Promise<{ error: any | null }> {
+    const { error } = await this.supabaseClient
+      .schema('ar_signatures')
+      .from('documents')
+      .update({ pdf_original_path: pdfPath })
+      .eq('id', documentId)
+
+    return { error }
   }
 
   /**

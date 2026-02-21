@@ -421,7 +421,27 @@ export class DocumentService {
       const documentId = uuidv4()
       console.log(`[DocumentService] uploadDocument: Generated document ID ${documentId}`)
 
-      // 7. Mark old documents as superseded (using PostgreSQL date format)
+      // 7. Insert document record first (so it exists before we set superseded_by on old docs)
+      // Use empty string for pdf_original_path, will update after GCS upload
+      const documentData = {
+        id: documentId,
+        user_id: request.user_id,
+        employee_id: request.employee_id,
+        payroll_period_start: payrollPeriodStartPostgres,
+        payroll_period_end: payrollPeriodEndPostgres,
+        pdf_original_path: '', // Will be updated after GCS upload
+        status: 'PENDING' as const,
+        original_hash: originalHash,
+        superseded_by: null,
+        is_active: true,
+        amount: Number(request.amount) || 0
+      }
+
+      const insertedDoc = await adminRepo.insertDocument(documentData)
+      console.log(`[DocumentService] uploadDocument: Inserted document record ${insertedDoc.id}`)
+
+      // 8. Mark old documents as superseded now that the new document exists
+      console.log(`[DocumentService] uploadDocument: Calling supersedeOldDocuments with user_id=${request.user_id}, payrollPeriodStartPostgres=${payrollPeriodStartPostgres}, payrollPeriodEndPostgres=${payrollPeriodEndPostgres}, newDocumentId=${documentId}`)
       await adminRepo.supersedeOldDocuments(
         request.user_id,
         payrollPeriodStartPostgres,
@@ -429,27 +449,17 @@ export class DocumentService {
         documentId
       )
 
-      // 8. Upload to GCS
+      // 9. Upload to GCS
       uploadedPath = `original/${request.user_id}/${documentId}.pdf`
       await GCSUtil.uploadPdf(uploadedPath, request.pdf)
       console.log(`[DocumentService] uploadDocument: Uploaded to GCS at ${uploadedPath}`)
 
-      // 9. Insert document record (using PostgreSQL date format)
-      const documentData = {
-        id: documentId,
-        user_id: request.user_id,
-        employee_id: request.employee_id,
-        payroll_period_start: payrollPeriodStartPostgres,
-        payroll_period_end: payrollPeriodEndPostgres,
-        pdf_original_path: uploadedPath,
-        status: 'PENDING' as const,
-        original_hash: originalHash,
-        superseded_by: null,
-        is_active: true
-      }
+      // 10. Update document with GCS path
+      const { error: updateError } = await adminRepo.updateDocumentPath(documentId, uploadedPath)
 
-      const insertedDoc = await adminRepo.insertDocument(documentData)
-      console.log(`[DocumentService] uploadDocument: Inserted document record ${insertedDoc.id}`)
+      if (updateError) {
+        console.error(`[DocumentService] uploadDocument: Failed to update GCS path - ${updateError.message}`)
+      }
 
       return {
         document_id: insertedDoc.id,

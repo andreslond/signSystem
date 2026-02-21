@@ -250,7 +250,7 @@ export class DocumentController {
   uploadDocument = async (req: Request, res: Response) => {
     try {
       // Validate required fields
-      const { user_id, employee_id, payroll_period_start, payroll_period_end } = req.body
+      const { user_id, employee_id, payroll_period_start, payroll_period_end, amount } = req.body
       const pdfFile = (req as any).file
 
       if (!pdfFile || !pdfFile.buffer) {
@@ -271,7 +271,8 @@ export class DocumentController {
         user_id,
         employee_id: parseInt(employee_id, 10),
         payroll_period_start,
-        payroll_period_end
+        payroll_period_end,
+        amount
       }
 
       console.log(`[DocumentController] uploadDocument: Processing upload for user ${user_id}, period ${payroll_period_start} to ${payroll_period_end}`)

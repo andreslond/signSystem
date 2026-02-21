@@ -231,6 +231,7 @@ export interface UploadDocumentRequest {
   employee_id: number
   payroll_period_start: string
   payroll_period_end: string
+  amount?: string
 }
 
 /**
